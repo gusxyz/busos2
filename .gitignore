@@ -1,0 +1,3 @@
+build/
+os/boot/kernel.bin
+.vscode/

@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include "util.h"
 #include "timer.h"
+#include "idt/idt.h"
 
 ide_channel_register_t channels[2];
 ide_device_t ideDevices[4];
@@ -19,69 +20,17 @@ void initIDEController()
     }
     printf("IDE Controller Found.\n");
     idePrintProg(ide_controller);
-    // currently were just only gonna support compatibility mode
+
+    // currently were just gonna support compatibility mode
+    // to make this more robust check prog if for pci then pass the BARs from the device
     ideInitialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+    irq_install_handler(14, &ideIrqHandle);
+    irq_install_handler(15, &ideIrqHandle);
 }
 
-void idePrintProg(pci_device_t *device)
+void ideIrqHandle(struct InterruptRegisters *r)
 {
-    // First, confirm this is actually an IDE controller.
-    // Class 0x01 = Mass Storage, Subclass 0x01 = IDE.
-    if (device->class_code != 0x01 || device->subclass != 0x01)
-    {
-        // Not an IDE controller, so we have nothing to print.
-        return;
-    }
-
-    printf("> IDE Controller Details (Prog IF: 0x%x):\n", device->prog_if);
-
-    // --- Primary Channel ---
-    if (device->prog_if & 0x01)
-    {
-        printf("- Primary Channel: PCI Native Mode\n");
-    }
-    else
-    {
-        printf("- Primary Channel: Compatibility Mode (Ports 0x1F0-7, 0x3F6, IRQ14)\n");
-    }
-    // Check if the mode is switchable
-    if (device->prog_if & 0x02)
-    {
-        printf("- Mode is switchable.\n");
-    }
-    else
-    {
-        printf("- Mode is fixed.\n");
-    }
-
-    // --- Secondary Channel ---
-    if (device->prog_if & 0x04)
-    {
-        printf("- Secondary Channel: PCI Native Mode\n");
-    }
-    else
-    {
-        printf("- Secondary Channel: Compatibility Mode (Ports 0x170-7, 0x376, IRQ15)\n");
-    }
-    // Check if the mode is switchable
-    if (device->prog_if & 0x08)
-    {
-        printf("- Mode is switchable.\n");
-    }
-    else
-    {
-        printf("- Mode is fixed.\n");
-    }
-
-    // --- Bus Mastering (DMA) ---
-    if (device->prog_if & 0x80)
-    {
-        printf(" Bus Master IDE: Supported (DMA is available)\n");
-    }
-    else
-    {
-        printf(" Bus Master IDE: Not supported (PIO only)\n");
-    }
+    ideIrqInvoked = 1;
 }
 
 void ideInitialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, unsigned int BAR3, unsigned int BAR4)
@@ -100,7 +49,7 @@ void ideInitialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, unsi
     ideWrite(ATA_PRIMARY, ATA_REG_CONTROL, 2);
     ideWrite(ATA_SECONDARY, ATA_REG_CONTROL, 2);
 
-    // 3- Detect ATA-ATAPI Devices:
+    // 3 - Detect ATA-ATAPI Devices:
     for (int i = 0; i < 2; i++)
     {
         for (j = 0; j < 2; j++)
@@ -307,7 +256,6 @@ void ideReadBuffer(uint8_t channel, uint8_t reg, unsigned int buffer, unsigned i
 {
     uint16_t port;
 
-    // --- Part 1: C logic to determine the correct port (no changes here) ---
     if (reg > 0x07 && reg < 0x0C)
         ideWrite(channel, ATA_REG_CONTROL, 0x80 | channels[channel].nIEN);
 
@@ -356,4 +304,136 @@ uint8_t idePolling(uint8_t channel, unsigned int advanced_check)
     }
 
     return 0; // No Error.
+}
+
+void ideWaitIrq()
+{
+    while (!ideIrqInvoked)
+        ;
+    ideIrqInvoked = 0;
+}
+
+void ideIrq()
+{
+    ideIrqInvoked = 1;
+}
+
+uint8_t ideAtapiRead(uint8_t drive, unsigned int lba, uint8_t numsects, unsigned short selector, unsigned int edi)
+{
+    unsigned int channel = ideDevices[drive].Channel;
+    unsigned int slavebit = ideDevices[drive].Drive;
+    unsigned int bus = channels[channel].base;
+    unsigned int words = 1024; // Sector Size. ATAPI drives have a sector size of 2048 bytes.
+    unsigned char err;
+    int i;
+
+    ideWrite(channel, ATA_REG_CONTROL, channels[channel].nIEN = ideIrqInvoked = 0x0);
+
+    atapiPacket[0] = ATAPI_CMD_READ;
+    atapiPacket[1] = 0x0;
+    atapiPacket[2] = (lba >> 24) & 0xFF;
+    atapiPacket[3] = (lba >> 16) & 0xFF;
+    atapiPacket[4] = (lba >> 8) & 0xFF;
+    atapiPacket[5] = (lba >> 0) & 0xFF;
+    atapiPacket[6] = 0x0;
+    atapiPacket[7] = 0x0;
+    atapiPacket[8] = 0x0;
+    atapiPacket[9] = numsects;
+    atapiPacket[10] = 0x0;
+    atapiPacket[11] = 0x0;
+
+    ideWrite(channel, ATA_REG_HDDEVSEL, slavebit << 4);
+
+    // 400 nanosecond delay for drive select to finish
+    for (int i = 0; i < 4; i++)
+        ideRead(channel, ATA_REG_ALTSTATUS);
+
+    ideWrite(channel, ATA_REG_FEATURES, 0);
+
+    ideWrite(channel, ATA_REG_LBA1, (words * 2) & 0xFF); // Lower Byte of Sector Size.
+    ideWrite(channel, ATA_REG_LBA2, (words * 2) >> 8);   // Upper Byte of Sector Size.
+
+    // (VI): Send the Packet Command:
+    // ------------------------------------------------------------------
+    ideWrite(channel, ATA_REG_COMMAND, ATA_CMD_PACKET); // Send the Command.
+
+    // (VII): Waiting for the driver to finish or return an error code:
+    // ------------------------------------------------------------------
+    if (err = idePolling(channel, 1))
+        return err; // Polling and return if error.
+
+    // (VIII): Sending the packet data:
+    // ------------------------------------------------------------------
+    asm volatile("rep   outsw" : : "c"(6), "d"(bus), "S"(atapiPacket)); // Send Packet Data
+    for (i = 0; i < numsects; i++)
+    {
+        ideWaitIrq(); // Wait for an IRQ.
+        atapiReadSector(selector, (void *)edi, bus, words);
+        edi += (words * 2);
+    }
+
+    ideWaitIrq();
+
+    // (XI): Waiting for BSY & DRQ to clear:
+    // ------------------------------------------------------------------
+    while (ideRead(channel, ATA_REG_STATUS) & (ATA_SR_BSY | ATA_SR_DRQ))
+        ;
+
+    return 0; // Easy, ... Isn't it?
+}
+
+void idePrintProg(pci_device_t *device)
+{
+
+    if (device->class_code != 0x01 || device->subclass != 0x01)
+    {
+        // Not an IDE controller
+        return;
+    }
+
+    printf("> IDE Controller Details (Prog IF: 0x%x):\n", device->prog_if);
+
+    if (device->prog_if & 0x01)
+    {
+        printf("- Primary Channel: PCI Native Mode\n");
+    }
+    else
+    {
+        printf("- Primary Channel: Compatibility Mode (Ports 0x1F0-7, 0x3F6, IRQ14)\n");
+    }
+    if (device->prog_if & 0x02)
+    {
+        printf("- Mode is switchable.\n");
+    }
+    else
+    {
+        printf("- Mode is fixed.\n");
+    }
+
+    if (device->prog_if & 0x04)
+    {
+        printf("- Secondary Channel: PCI Native Mode\n");
+    }
+    else
+    {
+        printf("- Secondary Channel: Compatibility Mode (Ports 0x170-7, 0x376, IRQ15)\n");
+    }
+
+    if (device->prog_if & 0x08)
+    {
+        printf("- Mode is switchable.\n");
+    }
+    else
+    {
+        printf("- Mode is fixed.\n");
+    }
+
+    if (device->prog_if & 0x80)
+    {
+        printf(" Bus Master IDE: Supported (DMA is available)\n");
+    }
+    else
+    {
+        printf(" Bus Master IDE: Not supported (PIO only)\n");
+    }
 }

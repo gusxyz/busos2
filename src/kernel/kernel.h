@@ -6,5 +6,8 @@
 #include "multiboot.h"
 #include "memory.h"
 #include "keyboard.h"
+#include "liballoc/liballoc.h"
+#include "pci.h"
+#include "ide.h"
 
 void kernel_main(uint32_t magic, struct multiboot_info* bootInfo);

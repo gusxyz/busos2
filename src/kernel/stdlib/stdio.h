@@ -3,11 +3,11 @@
 #include <stdbool.h>
 
 void putc(char c);
-void puts(const char* str);
-void printf(const char* fmt, ...);
-int * printf_number(int*, int, bool, int);
+void puts(const char *str);
+void printf(const char *fmt, ...);
+int *printf_number(int *, int, bool, int);
 
-extern void x86_div64_32(uint64_t, uint32_t, uint64_t*, uint32_t*);
+extern void x86_div64_32(uint64_t, uint32_t, uint64_t *, uint32_t *);
 
 #define PRINTF_STATE_START 0
 #define PRINTF_STATE_LENGTH 1

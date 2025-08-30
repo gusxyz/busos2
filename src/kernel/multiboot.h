@@ -2,18 +2,18 @@
 
 struct multiboot_aout_symbol_table
 {
-    uint32_t tabsize;
-    uint32_t strsize;
-    uint32_t addr;
-    uint32_t reserved;
+  uint32_t tabsize;
+  uint32_t strsize;
+  uint32_t addr;
+  uint32_t reserved;
 };
 
 struct multiboot_elf_section_header_table
 {
-    uint32_t num;
-    uint32_t size;
-    uint32_t addr;
-    uint32_t shndx;
+  uint32_t num;
+  uint32_t size;
+  uint32_t addr;
+  uint32_t shndx;
 };
 
 struct multiboot_info
@@ -74,10 +74,10 @@ struct multiboot_mmap_entry
   uint32_t addr_hi;
   uint32_t len_lo;
   uint32_t len_hi;
-#define MULTIBOOT_MEMORY_AVAILABLE              1
-#define MULTIBOOT_MEMORY_RESERVED               2
-#define MULTIBOOT_MEMORY_ACPI_RECLAIMABLE       3
-#define MULTIBOOT_MEMORY_NVS                    4
-#define MULTIBOOT_MEMORY_BADRAM                 5
+#define MULTIBOOT_MEMORY_AVAILABLE 1
+#define MULTIBOOT_MEMORY_RESERVED 2
+#define MULTIBOOT_MEMORY_ACPI_RECLAIMABLE 3
+#define MULTIBOOT_MEMORY_NVS 4
+#define MULTIBOOT_MEMORY_BADRAM 5
   int32_t type;
 } __attribute__((packed));

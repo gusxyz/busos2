@@ -53,12 +53,13 @@ uint32_t vmmFindFreePages(size_t numPages)
         {
             consecutive_pages = 0;
         }
-        
+
         current_addr += PAGE_SIZE;
 
         // Handle address wrapping or exhaustion
-        if (current_addr < next_free_vaddr) {
-             return 0; // Out of virtual memory
+        if (current_addr < next_free_vaddr)
+        {
+            return 0; // Out of virtual memory
         }
     }
 
@@ -69,17 +70,17 @@ void initMemory(uint32_t memHigh, uint32_t physicalAllocStart)
 {
     initial_page_dir[0] = 0;
     invalid(0);
-    initial_page_dir[1023] = ((uint32_t) initial_page_dir - KERNEL_START) | PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE;
+    initial_page_dir[1023] = ((uint32_t)initial_page_dir - KERNEL_START) | PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE;
     invalid(0xFFFFF000);
 
     pmmInit(physicalAllocStart, memHigh);
     memset(pageDirs, 0, 0x1000 * NUM_PAGES_DIRS);
-    memset(pageDirUsed, 0, NUM_PAGES_DIRS); 
+    memset(pageDirUsed, 0, NUM_PAGES_DIRS);
 }
 
 void invalid(uint32_t virtualAddr)
 {
-    asm volatile("invlpg %0" :: "m"(virtualAddr));
+    asm volatile("invlpg %0" ::"m"(virtualAddr));
 }
 
 uint32_t pmmAllocPageFrame()
@@ -87,25 +88,28 @@ uint32_t pmmAllocPageFrame()
     uint32_t start = pageFrameMin / 8 + ((pageFrameMin & 7) != 0 ? 1 : 0);
     uint32_t end = pageFrameMax / 8 - ((pageFrameMax & 7) != 0 ? 1 : 0);
 
-    for (uint32_t b = start; b < end; b++){
+    for (uint32_t b = start; b < end; b++)
+    {
         uint8_t byte = physicalMemoryBitmap[b];
-        if (byte == 0xFF){
+        if (byte == 0xFF)
+        {
             continue;
         }
 
-        for (uint32_t i = 0; i < 8; i++){
+        for (uint32_t i = 0; i < 8; i++)
+        {
             bool used = byte >> i & 1;
 
-            if (!used){
+            if (!used)
+            {
                 byte ^= (-1 ^ byte) & (1 << i);
                 physicalMemoryBitmap[b] = byte;
                 totalAlloc++;
 
-                uint32_t addr = (b*8*i) * 0x1000;
+                uint32_t addr = (b * 8 * i) * 0x1000;
                 return addr;
             }
         }
-        
     }
 
     return 0;
@@ -119,15 +123,15 @@ void pmmFreePageFrame(uint32_t paddr)
 
     // 2. Calculate the position of the frame's bit in the bitmap.
     uint32_t byteIndex = frameNum / BYTE;
-    uint32_t bitIndex  = frameNum % BYTE;
+    uint32_t bitIndex = frameNum % BYTE;
 
     // 3. Check if the page was actually allocated.
-    if ((physicalMemoryBitmap[byteIndex] & (1 << bitIndex)) == 0 )
+    if ((physicalMemoryBitmap[byteIndex] & (1 << bitIndex)) == 0)
     {
         // This is a double free! You might want to handle this error,
         // e.g., by printing a warning or panicking the kernel.
         // For now, we'll just ignore it.
-        return; 
+        return;
     }
 
     // 4. Clear the bit to mark it as free.
@@ -145,19 +149,21 @@ void vmmUnmapPage(uint32_t virtualAddr)
     uint32_t *prevPageDir = 0;
 
     // Handle potential access to kernel page directory
-    if (virtualAddr >= KERNEL_START) {
+    if (virtualAddr >= KERNEL_START)
+    {
         prevPageDir = memGetCurrentPageDir();
-        if (prevPageDir != initial_page_dir) {
+        if (prevPageDir != initial_page_dir)
+        {
             memChangePageDir(initial_page_dir);
         }
     }
 
-    uint32_t* pageDir = REC_PAGEDIR;
-    
+    uint32_t *pageDir = REC_PAGEDIR;
+
     // Check if the corresponding page table exists
     if (pageDir[pdIndex] & PAGE_FLAG_PRESENT)
     {
-        uint32_t* pt = REC_PAGETABLE(pdIndex);
+        uint32_t *pt = REC_PAGETABLE(pdIndex);
 
         // Check if the page itself is mapped
         if (pt[ptIndex] & PAGE_FLAG_PRESENT)
@@ -167,7 +173,8 @@ void vmmUnmapPage(uint32_t virtualAddr)
             uint32_t paddr = pt[ptIndex] & ~0xFFF;
 
             // 2. Free the physical frame associated with this page.
-            if (paddr != 0) { // Don't try to free the null page
+            if (paddr != 0)
+            { // Don't try to free the null page
                 pmmFreePageFrame(paddr);
             }
 
@@ -181,35 +188,40 @@ void vmmUnmapPage(uint32_t virtualAddr)
     }
 
     // Restore previous page directory if it was changed
-    if (prevPageDir != 0) {
-        if (prevPageDir != initial_page_dir) {
+    if (prevPageDir != 0)
+    {
+        if (prevPageDir != initial_page_dir)
+        {
             memChangePageDir(prevPageDir);
         }
     }
 }
 
-uint32_t* memGetCurrentPageDir()
+uint32_t *memGetCurrentPageDir()
 {
     uint32_t pd;
-    asm volatile("mov %%cr3, %0": "=r"(pd));
+    asm volatile("mov %%cr3, %0" : "=r"(pd));
     pd += KERNEL_START;
 
-    return (uint32_t*) pd;
+    return (uint32_t *)pd;
 }
 
-void memChangePageDir(uint32_t* pd)
+void memChangePageDir(uint32_t *pd)
 {
-    pd = (uint32_t*) (((uint32_t)pd)-KERNEL_START);
-    asm volatile("mov %0, %%eax \n mov %%eax, %%cr3 \n" :: "m"(pd));
+    pd = (uint32_t *)(((uint32_t)pd) - KERNEL_START);
+    asm volatile("mov %0, %%eax \n mov %%eax, %%cr3 \n" ::"m"(pd));
 }
 
 void syncPageDirs()
 {
-    for (int i = 0; i < NUM_PAGES_DIRS; i++){
-        if (pageDirUsed[i]){
-            uint32_t* pageDir = pageDirs[i];
+    for (int i = 0; i < NUM_PAGES_DIRS; i++)
+    {
+        if (pageDirUsed[i])
+        {
+            uint32_t *pageDir = pageDirs[i];
 
-            for (int i = 768; i < 1023; i++){
+            for (int i = 768; i < 1023; i++)
+            {
                 pageDir[i] = initial_page_dir[i] & ~PAGE_FLAG_OWNER;
             }
         }
@@ -226,7 +238,7 @@ bool memIsPagePresent(uint32_t virtualAddr)
     uint32_t ptIndex = (virtualAddr >> 12) & 0x3FF;
 
     // 2. Access the Page Directory Entry (PDE).
-    uint32_t* pageDir = REC_PAGEDIR;
+    uint32_t *pageDir = REC_PAGEDIR;
     uint32_t pde = pageDir[pdIndex];
 
     // 3. Check if the page table itself is present.
@@ -238,7 +250,7 @@ bool memIsPagePresent(uint32_t virtualAddr)
     }
 
     // 4. If the page table exists, access the Page Table Entry (PTE).
-    uint32_t* pageTable = REC_PAGETABLE(pdIndex);
+    uint32_t *pageTable = REC_PAGETABLE(pdIndex);
     uint32_t pte = pageTable[ptIndex];
 
     // 5. Check if the page is present.
@@ -259,18 +271,20 @@ void vmmMapPage(uint32_t virutalAddr, uint32_t physAddr, uint32_t flags)
     if (virutalAddr >= KERNEL_START)
     {
         prevPageDir = memGetCurrentPageDir();
-        if (prevPageDir != initial_page_dir){
+        if (prevPageDir != initial_page_dir)
+        {
             memChangePageDir(initial_page_dir);
         }
     }
 
     uint32_t pdIndex = virutalAddr >> 22;
     uint32_t ptIndex = virutalAddr >> 12 & 0x3FF;
-    
-    uint32_t* pageDir = REC_PAGEDIR;
-    uint32_t* pt = REC_PAGETABLE(pdIndex);
 
-    if (!(pageDir[pdIndex] & PAGE_FLAG_PRESENT)){
+    uint32_t *pageDir = REC_PAGEDIR;
+    uint32_t *pt = REC_PAGETABLE(pdIndex);
+
+    if (!(pageDir[pdIndex] & PAGE_FLAG_PRESENT))
+    {
         uint32_t ptPAddr = pmmAllocPageFrame();
         pageDir[pdIndex] = ptPAddr | PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE | PAGE_FLAG_OWNER | flags;
         invalid(virutalAddr);
@@ -285,12 +299,13 @@ void vmmMapPage(uint32_t virutalAddr, uint32_t physAddr, uint32_t flags)
     mem_num_vpages++;
     invalid(virutalAddr);
 
-    if (prevPageDir != 0){
+    if (prevPageDir != 0)
+    {
         syncPageDirs();
 
-        if (prevPageDir != initial_page_dir){
+        if (prevPageDir != initial_page_dir)
+        {
             memChangePageDir(prevPageDir);
         }
     }
 }
-

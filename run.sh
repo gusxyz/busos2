@@ -1,2 +1,2 @@
 #!/bin/bash
-qemu-system-i386 -cdrom build/busos.img
+qemu-system-i386 -cdrom build/bus.iso

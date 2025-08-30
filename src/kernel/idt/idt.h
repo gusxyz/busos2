@@ -9,21 +9,21 @@ struct idt_entry_struct
     uint8_t always0;
     uint8_t flags;
     uint16_t base_high;
-}__attribute__((packed));
+} __attribute__((packed));
 
 struct idt_ptr_struct
 {
     uint16_t limit;
     uint32_t base;
-}__attribute__((packed));
+} __attribute__((packed));
 
 void initIDT();
 void setIDTGate(uint8_t num, uint32_t base, uint16_t selector, uint8_t flags);
 extern void idt_flush(uint32_t);
 
-void irq_install_handler (int irq, void (*handler)(struct InterruptRegisters* r));
-void isr_handler(struct InterruptRegisters* registers);
-void irq_handler(struct InterruptRegisters* registers);
+void irq_install_handler(int irq, void (*handler)(struct InterruptRegisters *r));
+void isr_handler(struct InterruptRegisters *registers);
+void irq_handler(struct InterruptRegisters *registers);
 
 // isr externs
 extern void isr0();

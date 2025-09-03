@@ -1,7 +1,6 @@
 #pragma once
 #include <stdint.h>
-
-void *memset(void *dest, char val, uint32_t count);
+#include <stddef.h>
 
 // lock interrupts
 static inline void lockInterrupts()
@@ -71,3 +70,6 @@ extern struct InterruptRegisters
     uint32_t int_no, err_code;
     uint32_t eip, csm, eflags, useresp, ss;
 };
+
+void memset(void *dest, char val, uint32_t count);
+void *memcpy(void *destination, void *source, size_t num)

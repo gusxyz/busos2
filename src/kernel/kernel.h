@@ -7,7 +7,9 @@
 #include "memory.h"
 #include "keyboard.h"
 #include "liballoc/liballoc.h"
-#include "pci.h"
-#include "ide.h"
+#include "drivers/pci.h"
+#include "drivers/ide.h"
+#include "filesystem/filesystem.h"
+#include "vesa/vbe.h"
 
-void kernel_main(uint32_t magic, struct multiboot_info* bootInfo);
+void kernel_main(uint32_t magic, struct multiboot_info *bootInfo);

@@ -1,7 +1,7 @@
 #pragma once
 #include "pci.h"
-#include "util.h"
-#include "stdlib/stdio.h"
+#include "../util.h"
+#include "../stdlib/stdio.h"
 #include "atadefs.h"
 
 typedef struct ide_channel_register
@@ -25,7 +25,6 @@ typedef struct ide_device
    uint8_t Model[41];        // Model in string.
 } ide_device_t;
 
-void test_atapi_read();
 void initIDEController();
 void idePrintProg(pci_device_t *device);
 void ideInitialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, unsigned int BAR3, unsigned int BAR4);

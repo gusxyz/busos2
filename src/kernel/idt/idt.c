@@ -148,88 +148,88 @@ void handle_page_fault(struct InterruptRegisters *regs)
     uint8_t sgx = (error_code >> 15) & 0x1;
 
     // Print readable error message
-    printf("Page Fault Exception (#PF)\n");
-    printf("Faulting Address: 0x%08X\n", faulting_address);
-    printf("Error Code: 0x%04X\n", error_code);
+    // printf("Page Fault Exception (#PF)\n");
+    // printf("Faulting Address: 0x%08X\n", faulting_address);
+    // printf("Error Code: 0x%04X\n", error_code);
 
     // Basic cause
-    printf("Cause: ");
+    // printf("Cause: ");
     if (!present)
     {
-        printf("Non-present page");
+        // printf("Non-present page");
     }
     else
     {
-        printf("Protection violation");
+        // printf("Protection violation");
     }
-    printf("\n");
+    // printf("\n");
 
     // Operation details
-    printf("Operation: ");
+    // printf("Operation: ");
     if (instruction)
     {
-        printf("Instruction fetch");
+        // printf("Instruction fetch");
     }
     else
     {
-        printf("Data access");
+        // printf("Data access");
     }
     if (write)
     {
-        printf(" (write)");
+        // printf(" (write)");
     }
     else
     {
-        printf(" (read)");
+        // printf(" (read)");
     }
-    printf("\n");
+    // printf("\n");
 
     // Privilege level
-    printf("Privilege: ");
+    // printf("Privilege: ");
     if (user)
     {
-        printf("User mode");
+        // printf("User mode");
     }
     else
     {
-        printf("Supervisor mode");
+        // printf("Supervisor mode");
     }
-    printf("\n");
+    // printf("\n");
 
     // Additional flags
     if (reserved)
     {
-        printf("Reserved bit was set in page structure\n");
+        // printf("Reserved bit was set in page structure\n");
     }
     if (protection_key)
     {
-        printf("Protection key violation\n");
+        // printf("Protection key violation\n");
     }
     if (shadow_stack)
     {
-        printf("Shadow stack access fault\n");
+        // printf("Shadow stack access fault\n");
     }
     if (sgx)
     {
-        printf("SGX violation\n");
+        // printf("SGX violation\n");
     }
 
     // Register state
-    printf("Register state at time of fault:\n");
-    printf("EIP: 0x%08X\n", regs->eip);
+    // printf("Register state at time of fault:\n");
+    // printf("EIP: 0x%08X\n", regs->eip);
 
     // Traditional interpretation table
-    printf("\nTraditional interpretation:\n");
-    printf("%s process tried to %s a %s\n",
+    // printf("\nTraditional interpretation:\n");
+    // printf("%s process tried to %s a %s\n",
            user ? "User" : "Supervisory",
            write ? "write" : "read",
            present ? "page and caused a protection fault" : "non-present page entry");
 
-    printf("\nSystem Halted. Debug information above.\n");
+           // printf("\nSystem Halted. Debug information above.\n");
 
-    // Halt the system
-    for (;;)
-        ;
+           // Halt the system
+           for (;;)
+               ;
 }
 
 void isr_handler(struct InterruptRegisters *registers)

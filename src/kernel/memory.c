@@ -3,6 +3,7 @@
 #include "util.h"
 #include <stdbool.h>
 #include <stddef.h>
+#include "stdlib/stdio.h"
 
 static uint32_t pageFrameMin;
 static uint32_t pageFrameMax;
@@ -13,7 +14,6 @@ int mem_num_vpages;
 #define NUM_PAGES_DIRS 256
 #define NUM_PAGE_FRAMES (0x10000000 / 0x1000 / BYTE)
 static uint32_t next_free_vaddr = HEAP_START;
-#define HEAP_START 0x10000000
 
 uint8_t physicalMemoryBitmap[NUM_PAGE_FRAMES / BYTE];
 static uint32_t pageDirs[NUM_PAGES_DIRS][1024] __attribute__((aligned(PAGE_SIZE)));
@@ -24,7 +24,14 @@ void pmmInit(uint32_t memLow, uint32_t memHigh)
     pageFrameMin = CEIL_DIV(memLow, 0x1000);
     pageFrameMax = memHigh / 0x1000;
     totalAlloc = 0;
-
+    //// printf("--- PMM Initialization ---\n");
+    //// printf("memLow (physicalAllocStart): 0x%x\n", memLow);
+    //// printf("memHigh (mem_upper * 1024): 0x%x\n", memHigh);
+    //// printf("Calculated pageFrameMin: %d (0x%x)\n", pageFrameMin, pageFrameMin);
+    //// printf("Calculated pageFrameMax: %d (0x%x)\n", pageFrameMax, pageFrameMax);
+    //// printf("Search will start at byte_index: %d\n", pageFrameMin / 8);
+    //// printf("Search will end before byte_index: %d\n", pageFrameMax / 8);
+    //// printf("--------------------------\n");
     memset(physicalMemoryBitmap, 0, sizeof(physicalMemoryBitmap));
 }
 
@@ -34,7 +41,7 @@ uint32_t vmmFindFreePages(size_t numPages)
     uint32_t start_addr = 0;
     uint32_t current_addr = next_free_vaddr;
 
-    while (current_addr < KERNEL_START)
+    while (current_addr >= HEAP_START)
     {
         if (!memIsPagePresent(current_addr))
         {
@@ -85,10 +92,7 @@ void invalid(uint32_t virtualAddr)
 
 uint32_t pmmAllocPageFrame()
 {
-    uint32_t start = pageFrameMin / 8 + ((pageFrameMin & 7) != 0 ? 1 : 0);
-    uint32_t end = pageFrameMax / 8 - ((pageFrameMax & 7) != 0 ? 1 : 0);
-
-    for (uint32_t b = start; b < end; b++)
+    for (uint32_t b = pageFrameMin / 8; b < pageFrameMax / 8; b++)
     {
         uint8_t byte = physicalMemoryBitmap[b];
         if (byte == 0xFF)
@@ -106,12 +110,13 @@ uint32_t pmmAllocPageFrame()
                 physicalMemoryBitmap[b] = byte;
                 totalAlloc++;
 
-                uint32_t addr = (b * 8 * i) * 0x1000;
-                return addr;
+                uint32_t frameNumber = (b * 8) + i;
+                return frameNumber * PAGE_SIZE;
             }
         }
     }
 
+    //// printf("PMM: Out of physical memory!\n");
     return 0;
 }
 
@@ -307,5 +312,15 @@ void vmmMapPage(uint32_t virutalAddr, uint32_t physAddr, uint32_t flags)
         {
             memChangePageDir(prevPageDir);
         }
+    }
+}
+
+void vmmMapRegion(uint32_t virtualAddr, uint32_t physAddr, size_t numPages, uint32_t flags)
+{
+    for (size_t i = 0; i < numPages; i++)
+    {
+        uint32_t v = virtualAddr + (i * PAGE_SIZE);
+        uint32_t p = physAddr + (i * PAGE_SIZE);
+        vmmMapPage(v, p, flags);
     }
 }

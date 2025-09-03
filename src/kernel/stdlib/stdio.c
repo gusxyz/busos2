@@ -1,12 +1,12 @@
 #include "stdio.h"
-#include "../vga.h"
+#include "../console/console.h"
 
 void putc(char c)
 {
     char str[2]; // Create a temporary buffer for the string
     str[0] = c;
-    str[1] = '\0'; // Add the null terminator
-    print(str);    // Print the valid, null-terminated string
+    str[1] = '\0';     // Add the null terminator
+    console_putc(str); // Print the valid, null-terminated string
 }
 
 void puts(const char *s)
@@ -226,4 +226,15 @@ int *printf_number(int *argp, int length, bool sign, int radix)
     }
 
     return argp;
+}
+
+int strcmp(const char *s1, const char *s2)
+{
+    unsigned char c1, c2;
+    while ((c1 = *s1++) == (c2 = *s2++))
+    {
+        if (c1 == '\0')
+            return 0;
+    }
+    return c1 - c2;
 }

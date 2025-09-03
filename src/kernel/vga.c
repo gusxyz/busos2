@@ -48,7 +48,7 @@ void newLine()
 
 void scrollUp()
 {
-    for (uint16_t y = 0; y < height; y++)
+    for (uint16_t y = 1; y < height; y++)
     {
         for (uint16_t x = 0; x < width; x++)
         {

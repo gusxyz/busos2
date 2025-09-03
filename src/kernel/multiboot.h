@@ -1,4 +1,4 @@
-#include <stdint.h>
+#pragma once
 
 struct multiboot_aout_symbol_table
 {
@@ -18,20 +18,12 @@ struct multiboot_elf_section_header_table
 
 struct multiboot_info
 {
-  /* Multiboot info version number */
   uint32_t flags;
-
-  /* Available memory from BIOS */
   uint32_t mem_lower;
   uint32_t mem_upper;
-
-  /* "root" partition */
   uint32_t boot_device;
 
-  /* Kernel command line */
   uint32_t cmdline;
-
-  /* Boot-Module list */
   uint32_t mods_count;
   uint32_t mods_addr;
 
@@ -41,43 +33,42 @@ struct multiboot_info
     struct multiboot_elf_section_header_table elf_sec;
   } u;
 
-  /* Memory Mapping buffer */
   uint32_t mmap_length;
   uint32_t mmap_addr;
 
-  /* Drive Info buffer */
   uint32_t drives_length;
   uint32_t drives_addr;
 
-  /* ROM configuration table */
   uint32_t config_table;
-
-  /* Boot Loader Name */
   uint32_t boot_loader_name;
 
-  /* APM table */
   uint32_t apm_table;
 
-  /* Video */
   uint32_t vbe_control_info;
   uint32_t vbe_mode_info;
   uint16_t vbe_mode;
   uint16_t vbe_interface_seg;
   uint16_t vbe_interface_off;
   uint16_t vbe_interface_len;
+  uint64_t framebuffer_addr;
+  uint32_t framebuffer_pitch;
+  uint32_t framebuffer_width;
+  uint32_t framebuffer_height;
+  uint8_t framebuffer_bpp;
+  uint8_t framebuffer_type;
 };
 
 struct multiboot_mmap_entry
 {
   uint32_t size;
-  uint32_t addr_lo;
-  uint32_t addr_hi;
-  uint32_t len_lo;
-  uint32_t len_hi;
+  uint32_t addr_low;
+  uint32_t addr_high;
+  uint32_t len_low;
+  uint32_t len_high;
 #define MULTIBOOT_MEMORY_AVAILABLE 1
 #define MULTIBOOT_MEMORY_RESERVED 2
 #define MULTIBOOT_MEMORY_ACPI_RECLAIMABLE 3
 #define MULTIBOOT_MEMORY_NVS 4
 #define MULTIBOOT_MEMORY_BADRAM 5
-  int32_t type;
+  uint32_t type;
 } __attribute__((packed));

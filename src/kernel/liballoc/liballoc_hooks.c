@@ -1,6 +1,7 @@
 #include "liballoc.h"
 #include "../memory.h"
 #include "../util.h"
+#include "../stdlib/stdio.h"
 
 int liballoc_lock()
 {
@@ -14,11 +15,12 @@ int liballoc_unlock()
     return 0;
 }
 
-void* liballoc_alloc(size_t num_pages)
+void *liballoc_alloc(size_t num_pages)
 {
     uint32_t start_vaddr = vmmFindFreePages(num_pages);
     if (start_vaddr == 0)
     {
+        // printf("Out of virtual address space\n");
         return NULL; // Out of virtual address space
     }
 
@@ -35,6 +37,7 @@ void* liballoc_alloc(size_t num_pages)
             // Free all the pages we have already mapped for this request.
             for (size_t j = 0; j < i; j++)
             {
+                // printf("CRITICAL: Out of physical memory! We must roll back the allocation.\n");
                 vmmUnmapPage(start_vaddr + (j * PAGE_SIZE));
             }
             return NULL; // Return failure
@@ -44,10 +47,10 @@ void* liballoc_alloc(size_t num_pages)
         // Use flags for present and writable for a general-purpose heap.
         vmmMapPage(vaddr, paddr, PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE);
     }
-    return (void*) start_vaddr;
+    return (void *)start_vaddr;
 }
 
-int liballoc_free(void* ptr, size_t num_pages)
+int liballoc_free(void *ptr, size_t num_pages)
 {
     uint32_t start_vaddr = (uint32_t)ptr;
 

@@ -22,6 +22,7 @@ uint32_t pmmAllocPageFrame();
 uint32_t vmmFindFreePages(size_t numPages);
 void vmmUnmapPage(uint32_t virtualAddr);
 void vmmMapPage(uint32_t virutalAddr, uint32_t physAddr, uint32_t flags);
+void vmmMapRegion(uint32_t virtualAddr, uint32_t physAddr, size_t numPages, uint32_t flags);
 void syncPageDirs();
 void memChangePageDir(uint32_t *pd);
 uint32_t *memGetCurrentPageDir();

@@ -1,5 +1,7 @@
 #pragma once
 #include <stdint.h>
 
-void console_putc(char c);
-void scroll_screen();
+void consoleInit();
+void consolePutC(char c);
+void consoleMarkInputStart();
+void createPrompt();

@@ -1,7 +1,7 @@
 #pragma once
 #include "pci.h"
-#include "util.h"
-#include "stdlib/stdio.h"
+#include "../util.h"
+#include "../stdlib/stdio.h"
 #include <stddef.h>
 
 static pci_device_t pciDevices[MAX_PCI_DEVICES];
@@ -10,7 +10,7 @@ static int pciDeviceCount = 0;
 void pciInit(bool dumpPCI)
 {
     checkAllBuses();
-    // printf("PCI Initialized\n");
+    printf("PCI Initialized\n");
     if (!dumpPCI)
         return;
     for (int i = 0; i < MAX_PCI_DEVICES; i++)
@@ -18,7 +18,7 @@ void pciInit(bool dumpPCI)
         pci_device_t pciDevice = pciDevices[i];
         if (pciDevice.vendor_id == 0x0)
             continue;
-        // printf("PCI DEVICE: Vendor Id: 0x%x Device Id: 0x%x Class: 0x%x Subclass: 0x%x\n Header Type:0x%x\n", pciDevice.vendor_id, pciDevice.device_id, pciDevice.class_code, pciDevice.subclass, pciDevice.header_type);
+        printf("PCI DEVICE: Vendor Id: 0x%x Device Id: 0x%x Class: 0x%x Subclass: 0x%x\n Header Type:0x%x\n", pciDevice.vendor_id, pciDevice.device_id, pciDevice.class_code, pciDevice.subclass, pciDevice.header_type);
     }
 }
 uint32_t pciConfigReadDWord(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset)
@@ -149,7 +149,7 @@ void checkFunction(uint8_t bus, uint8_t slot, uint8_t func)
 {
     if (pciDeviceCount >= MAX_PCI_DEVICES)
     {
-        // printf("PCI: Warning! Found more than MAX_PCI_DEVICES. Ignoring rest.\n");
+        printf("PCI: Warning! Found more than MAX_PCI_DEVICES. Ignoring rest.\n");
         return; // Stop scanning
     }
 

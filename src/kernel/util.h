@@ -2,6 +2,19 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define CEIL_DIV(a, b) (((a + b) - 1) / b)
+
+void *memset(void *s, int c, size_t n);
+void *memcpy(void *destination, void *source, size_t num);
+int memcmp(const void *__s1, const void *__s2, size_t __n);
+int strlen(char *s);
+void serialInit();
+int serialTransmitEmpty();
+void serial_putc(char c);
+void serial_puts(const char *str);
+void serial_putsf(const char *fmt, ...);
+int *serial_putsfn(int *argp, int length, bool sign, int radix);
+
 // lock interrupts
 static inline void lockInterrupts()
 {
@@ -25,8 +38,6 @@ static inline void outl(uint16_t port, uint32_t val)
 {
     __asm__ volatile("outl %0, %1" : : "a"(val), "d"(port) : "memory");
 }
-
-#define CEIL_DIV(a, b) (((a + b) - 1) / b)
 
 // input on port b
 static inline uint8_t inb(uint16_t port)
@@ -70,6 +81,3 @@ extern struct InterruptRegisters
     uint32_t int_no, err_code;
     uint32_t eip, csm, eflags, useresp, ss;
 };
-
-void memset(void *dest, char val, uint32_t count);
-void *memcpy(void *destination, void *source, size_t num)

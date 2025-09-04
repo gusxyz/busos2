@@ -1,7 +1,8 @@
 #include "filesystem.h"
 #include "../drivers/ide.h"
-#include "../liballoc/liballoc.h"
+#include <liballoc.h>
 #include "../stdlib/stdio.h"
+#include "../util.h"
 
 int isoFilenameCompare(const char *isoName, int isoLen, const char *cName)
 {
@@ -47,7 +48,7 @@ iso9660_dir_t *resolveEntry(uint8_t drive, uint32_t dirLBA, const char *name)
     uint8_t *dirContentBuf = NULL;
     uint32_t dirSize = 0;
 
-    // This block is similar to your // printfilesInDirectory function.
+    // This block is similar to your printfilesInDirectory function.
     // It reads the entire directory contents into a buffer.
     {
         uint8_t *sectorBuffer = (uint8_t *)kmalloc(ISO_BLOCKSIZE);
@@ -91,7 +92,7 @@ iso9660_dir_t *resolveEntry(uint8_t drive, uint32_t dirLBA, const char *name)
             break;
 
         // Use our special comparison function
-        if (iso_filename_compare(entry->filename.str, entry->filename.len, name) == 0)
+        if (isoFilenameCompare(entry->filename.str, entry->filename.len, name) == 0)
         {
             // Found a match!
             // Allocate a new struct to hold the result.
@@ -114,12 +115,12 @@ iso9660_pvd_t *getPVDStruct(uint8_t driveIndex)
     uint32_t pvdLBA = ISO_PVD_SECTOR;
     uint32_t sectorSize = ISO_BLOCKSIZE;
 
-    // printf("Attempting to read PVD from drive %d...\n", driveIndex);
+    printf("Attempting to read PVD from drive %d...\n", driveIndex);
 
     uint8_t *buffer = (uint8_t *)kmalloc(sectorSize);
     if (!buffer)
     {
-        // printf("PVD Read Error: Failed to allocate memory.\n");
+        printf("PVD Read Error: Failed to allocate memory.\n");
         return NULL;
     }
 
@@ -127,7 +128,7 @@ iso9660_pvd_t *getPVDStruct(uint8_t driveIndex)
 
     if (error != 0)
     {
-        // printf("PVD Read Error: ideAtapiRead failed with code %d.\n", error);
+        printf("PVD Read Error: ideAtapiRead failed with code %d.\n", error);
         kfree(buffer);
         return NULL;
     }
@@ -136,12 +137,12 @@ iso9660_pvd_t *getPVDStruct(uint8_t driveIndex)
 
     if (pvd->type != ISO_VD_PRIMARY && strcmp(pvd->id, "CD001") != 0) // need to implement strcmp(pvd->id = cd0001) 5 != 0) add string length prob to makee strcmp better
     {
-        // printf("PVD Validation Error: Invalid PVD signature.\n");
+        printf("PVD Validation Error: Invalid PVD signature.\n");
         kfree(buffer);
         return NULL;
     }
 
-    // printf("Successfully read and validated PVD:\n");
+    printf("Successfully read and validated PVD:\n");
 
     return pvd;
 }
@@ -151,11 +152,11 @@ uint8_t *loadPathTable(uint8_t drive, iso9660_pvd_t *pvd)
     uint32_t pathTableLBA = pvd->type_l_path_table;
     uint32_t pathTableSize = pvd->pathTableSize;
 
-    // printf("Path Table is at LBA %u, size is %u bytes.\n", pathTableLBA, pathTableSize);
+    printf("Path Table is at LBA %u, size is %u bytes.\n", pathTableLBA, pathTableSize);
 
     if (pathTableSize == 0)
     {
-        // printf("Error: Path table size is zero.\n");
+        printf("Error: Path table size is zero.\n");
         return NULL;
     }
 
@@ -164,14 +165,14 @@ uint8_t *loadPathTable(uint8_t drive, iso9660_pvd_t *pvd)
     uint8_t *tableBuffer = (uint8_t *)kmalloc(numSectors * ISO_BLOCKSIZE);
     if (!tableBuffer)
     {
-        // printf("Error: Failed to allocate memory for path table.\n");
+        printf("Error: Failed to allocate memory for path table.\n");
         return NULL;
     }
 
     uint8_t error = ideAtapiRead(drive, pathTableLBA, numSectors, 0x10, (unsigned int)tableBuffer);
     if (error)
     {
-        // printf("Error: Failed to read path table from disc. Code: %d\n", error);
+        printf("Error: Failed to read path table from disc. Code: %d\n", error);
         kfree(tableBuffer);
         return NULL;
     }
@@ -200,17 +201,17 @@ void printDirectoryRecursive(uint8_t drive, uint8_t *pathTableBuf, uint32_t tabl
             // 1. Print indentation to create the tree structure
             for (int i = 0; i < depth; i++)
             {
-                // printf("  "); // Print two spaces per depth level
+                printf("  "); // Print two spaces per depth level
             }
-            // printf("|--");
+            printf("|--");
 
             // 2. Print the directory name (which is not null-terminated)
             for (int i = 0; i < pt_entry->len_di; i++)
             {
-                // printf("%c", pt_entry->identifier[i]);
+                printf("%c", pt_entry->identifier[i]);
             }
-            // printf("\n");
-            // printfilesInDirectory(drive, pt_entry->extent, depth);
+            printf("\n");
+            printfilesInDirectory(drive, pt_entry->extent, depth);
 
             // 3. This child is a directory, so recurse to print its contents.
             // The new parent is the index of the entry we just found.
@@ -226,21 +227,21 @@ void printDirectoryRecursive(uint8_t drive, uint8_t *pathTableBuf, uint32_t tabl
     }
 }
 
-void // printfileSystemTree(uint8_t drive)
+void printfileSystemTree(uint8_t drive)
 {
-    // printf("Attempting to print filesystem tree for drive %d:\n", drive);
+    printf("Attempting to print filesystem tree for drive %d:\n", drive);
 
     iso9660_pvd_t *pvd = getPVDStruct(drive);
     if (!pvd)
     {
-        // printf("Failed to read PVD. Aborting.\n");
+        printf("Failed to read PVD. Aborting.\n");
         return;
     }
 
     uint8_t *path_table = loadPathTable(drive, pvd);
     if (!path_table)
     {
-        // printf("Failed to load path table. Aborting.\n");
+        printf("Failed to load path table. Aborting.\n");
         kfree(pvd);
         return;
     }
@@ -249,15 +250,15 @@ void // printfileSystemTree(uint8_t drive)
 
     kfree(pvd);
 
-    // printf("/\n");
+    printf("/\n");
     printDirectoryRecursive(drive, path_table, pt_size, 1, 0);
 
     kfree(path_table);
 
-    // printf("\nFilesystem tree printed.\n");
+    printf("\nFilesystem tree printed.\n");
 }
 
-void // printfilesInDirectory(uint8_t drive, uint32_t dirLBA, int depth)
+void printfilesInDirectory(uint8_t drive, uint32_t dirLBA, int depth)
 {
     // Read the first sector to determine the full size of the directory listing.
     uint8_t *sectorBuffer = (uint8_t *)kmalloc(ISO_BLOCKSIZE);
@@ -266,7 +267,7 @@ void // printfilesInDirectory(uint8_t drive, uint32_t dirLBA, int depth)
 
     if (ideAtapiRead(drive, dirLBA, 1, 0x10, (unsigned int)sectorBuffer))
     {
-        // printf("Read error in // printfilesInDirectory\n");
+        printf("Read error in printfilesInDirectory\n");
         kfree(sectorBuffer);
         return;
     }
@@ -295,7 +296,7 @@ void // printfilesInDirectory(uint8_t drive, uint32_t dirLBA, int depth)
 
         if (ideAtapiRead(drive, dirLBA, num_sectors, 0x10, (unsigned int)dirContentBuf))
         {
-            // printf("Read error for multi-sector directory\n");
+            printf("Read error for multi-sector directory\n");
             kfree(dirContentBuf);
             return;
         }
@@ -320,16 +321,16 @@ void // printfilesInDirectory(uint8_t drive, uint32_t dirLBA, int depth)
             // Print indentation for a file (one level deeper than its parent dir)
             for (int i = 0; i < depth + 1; i++)
             {
-                // printf(" ");
+                printf(" ");
             }
-            // printf("- "); // Use a different prefix for files
+            printf("- "); // Use a different prefix for files
 
             // Print the filename
             for (int i = 0; i < entry->filename.len; i++)
             {
-                // printf("%c", entry->filename.str[i]);
+                printf("%c", entry->filename.str[i]);
             }
-            // printf("\n");
+            printf("\n");
         }
 
         // Move to the next entry

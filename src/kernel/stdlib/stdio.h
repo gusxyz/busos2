@@ -1,5 +1,5 @@
 #pragma once
-#include "stdint.h"
+#include <stdint.h>
 #include <stdbool.h>
 
 void putc(char c);
@@ -9,6 +9,7 @@ int *printf_number(int *, int, bool, int);
 int strcmp(const char *s1, const char *s2); // needs to be moved to string.h or we just need to get newlib working
 
 extern void x86_div64_32(uint64_t, uint32_t, uint64_t *, uint32_t *);
+extern const char possibleChars[];
 
 #define PRINTF_STATE_START 0
 #define PRINTF_STATE_LENGTH 1

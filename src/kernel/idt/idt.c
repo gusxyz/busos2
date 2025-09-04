@@ -85,7 +85,7 @@ void initIDT()
     setIDTGate(128, (uint32_t)isr177, 0x08, 0x8E); // sys calls
 
     idt_flush((uint32_t)&idt_ptr);
-    print("IDT Initialized.\n");
+    serial_putsf("IDT Initialized.\n");
 }
 
 void setIDTGate(uint8_t num, uint32_t base, uint16_t selector, uint8_t flags)
@@ -148,88 +148,88 @@ void handle_page_fault(struct InterruptRegisters *regs)
     uint8_t sgx = (error_code >> 15) & 0x1;
 
     // Print readable error message
-    // printf("Page Fault Exception (#PF)\n");
-    // printf("Faulting Address: 0x%08X\n", faulting_address);
-    // printf("Error Code: 0x%04X\n", error_code);
+    serial_putsf("Page Fault Exception (#PF)\n");
+    serial_putsf("Faulting Address: 0x%08X\n", faulting_address);
+    serial_putsf("Error Code: 0x%04X\n", error_code);
 
     // Basic cause
-    // printf("Cause: ");
+    serial_putsf("Cause: ");
     if (!present)
     {
-        // printf("Non-present page");
+        serial_putsf("Non-present page");
     }
     else
     {
-        // printf("Protection violation");
+        serial_putsf("Protection violation");
     }
-    // printf("\n");
+    serial_putsf("\n");
 
     // Operation details
-    // printf("Operation: ");
+    serial_putsf("Operation: ");
     if (instruction)
     {
-        // printf("Instruction fetch");
+        serial_putsf("Instruction fetch");
     }
     else
     {
-        // printf("Data access");
+        serial_putsf("Data access");
     }
     if (write)
     {
-        // printf(" (write)");
+        serial_putsf(" (write)");
     }
     else
     {
-        // printf(" (read)");
+        serial_putsf(" (read)");
     }
-    // printf("\n");
+    serial_putsf("\n");
 
     // Privilege level
-    // printf("Privilege: ");
+    serial_putsf("Privilege: ");
     if (user)
     {
-        // printf("User mode");
+        serial_putsf("User mode");
     }
     else
     {
-        // printf("Supervisor mode");
+        serial_putsf("Supervisor mode");
     }
-    // printf("\n");
+    serial_putsf("\n");
 
     // Additional flags
     if (reserved)
     {
-        // printf("Reserved bit was set in page structure\n");
+        serial_putsf("Reserved bit was set in page structure\n");
     }
     if (protection_key)
     {
-        // printf("Protection key violation\n");
+        serial_putsf("Protection key violation\n");
     }
     if (shadow_stack)
     {
-        // printf("Shadow stack access fault\n");
+        serial_putsf("Shadow stack access fault\n");
     }
     if (sgx)
     {
-        // printf("SGX violation\n");
+        serial_putsf("SGX violation\n");
     }
 
     // Register state
-    // printf("Register state at time of fault:\n");
-    // printf("EIP: 0x%08X\n", regs->eip);
+    serial_putsf("Register state at time of fault:\n");
+    serial_putsf("EIP: 0x%08X\n", regs->eip);
 
     // Traditional interpretation table
-    // printf("\nTraditional interpretation:\n");
-    // printf("%s process tried to %s a %s\n",
-           user ? "User" : "Supervisory",
-           write ? "write" : "read",
-           present ? "page and caused a protection fault" : "non-present page entry");
+    // serial_putsf("\nTraditional interpretation:\n");
+    // serial_putsf("%s process tried to %s a %s\n",
+    //       user ? "User" : "Supervisory",
+    //       write ? "write" : "read",
+    //       present ? "page and caused a protection fault" : "non-present page entry");
 
-           // printf("\nSystem Halted. Debug information above.\n");
+    // serial_putsf("\nSystem Halted. Debug information above.\n");
 
-           // Halt the system
-           for (;;)
-               ;
+    // Halt the system
+    for (;;)
+        ;
 }
 
 void isr_handler(struct InterruptRegisters *registers)
@@ -240,9 +240,9 @@ void isr_handler(struct InterruptRegisters *registers)
     }
     else if (registers->int_no < 32)
     {
-        print(exceptionMessages[registers->int_no]);
-        print("\n");
-        print("Exception Reached.\nSystem Haulted\n");
+        serial_putsf(exceptionMessages[registers->int_no]);
+        serial_putsf("\n");
+        serial_putsf("Exception Reached.\nSystem Haulted\n");
         for (;;)
             ;
     }

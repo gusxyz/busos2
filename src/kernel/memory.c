@@ -24,14 +24,14 @@ void pmmInit(uint32_t memLow, uint32_t memHigh)
     pageFrameMin = CEIL_DIV(memLow, 0x1000);
     pageFrameMax = memHigh / 0x1000;
     totalAlloc = 0;
-    //// printf("--- PMM Initialization ---\n");
-    //// printf("memLow (physicalAllocStart): 0x%x\n", memLow);
-    //// printf("memHigh (mem_upper * 1024): 0x%x\n", memHigh);
-    //// printf("Calculated pageFrameMin: %d (0x%x)\n", pageFrameMin, pageFrameMin);
-    //// printf("Calculated pageFrameMax: %d (0x%x)\n", pageFrameMax, pageFrameMax);
-    //// printf("Search will start at byte_index: %d\n", pageFrameMin / 8);
-    //// printf("Search will end before byte_index: %d\n", pageFrameMax / 8);
-    //// printf("--------------------------\n");
+    serial_putsf("--- PMM Initialization ---\n");
+    serial_putsf("memLow (physicalAllocStart): 0x%x\n", memLow);
+    serial_putsf("memHigh (mem_upper * 1024): 0x%x\n", memHigh);
+    serial_putsf("Calculated pageFrameMin: %d (0x%x)\n", pageFrameMin, pageFrameMin);
+    serial_putsf("Calculated pageFrameMax: %d (0x%x)\n", pageFrameMax, pageFrameMax);
+    serial_putsf("Search will start at byte_index: %d\n", pageFrameMin / 8);
+    serial_putsf("Search will end before byte_index: %d\n", pageFrameMax / 8);
+    serial_putsf("--------------------------\n");
     memset(physicalMemoryBitmap, 0, sizeof(physicalMemoryBitmap));
 }
 
@@ -80,6 +80,9 @@ void initMemory(uint32_t memHigh, uint32_t physicalAllocStart)
     initial_page_dir[1023] = ((uint32_t)initial_page_dir - KERNEL_START) | PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE;
     invalid(0xFFFFF000);
 
+    serial_putsf("Identity mapping first 1MB...\n");
+    vmmMapRegion(0x0, 0x0, 256, PAGE_FLAG_WRITE);
+
     pmmInit(physicalAllocStart, memHigh);
     memset(pageDirs, 0, 0x1000 * NUM_PAGES_DIRS);
     memset(pageDirUsed, 0, NUM_PAGES_DIRS);
@@ -116,7 +119,7 @@ uint32_t pmmAllocPageFrame()
         }
     }
 
-    //// printf("PMM: Out of physical memory!\n");
+    serial_putsf("PMM: Out of physical memory!\n");
     return 0;
 }
 
@@ -323,4 +326,31 @@ void vmmMapRegion(uint32_t virtualAddr, uint32_t physAddr, size_t numPages, uint
         uint32_t p = physAddr + (i * PAGE_SIZE);
         vmmMapPage(v, p, flags);
     }
+}
+
+void vmmUnmapRegion(uint32_t virtualAddr, size_t numPages)
+{
+    for (size_t i = 0; i < numPages; i++)
+    {
+        uint32_t v = virtualAddr + (i * PAGE_SIZE);
+        // We can just call pmmFreePageFrame directly since we dont care about the other stuff
+        vmmUnmapPage(v);
+    }
+}
+
+void *vmmAlloc(uint32_t phys_addr, size_t num_pages, uint32_t flags)
+{
+    // 1. Find a free block of virtual addresses for our mapping
+    uint32_t virt_addr = vmmFindFreePages(num_pages);
+    if (virt_addr == 0)
+    {
+        printf("vmmAlloc: out of virtual memory!\n");
+        return NULL; // Return NULL on failure
+    }
+
+    // 2. Map the physical region to the virtual space we just found
+    vmmMapRegion(virt_addr, phys_addr, num_pages, flags);
+
+    // 3. Return the virtual pointer
+    return (void *)virt_addr;
 }

@@ -28,4 +28,6 @@ void memChangePageDir(uint32_t *pd);
 uint32_t *memGetCurrentPageDir();
 void pmmFreePageFrame(uint32_t paddr);
 void vmmUnmapPage(uint32_t virtualAddr);
+void vmmUnmapRegion(uint32_t virtualAddr, size_t numPages);
 bool memIsPagePresent(uint32_t virtualAddr);
+void *vmmAlloc(uint32_t phys_addr, size_t num_pages, uint32_t flags);

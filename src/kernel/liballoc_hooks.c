@@ -1,7 +1,7 @@
-#include "liballoc.h"
-#include "../memory.h"
-#include "../util.h"
-#include "../stdlib/stdio.h"
+#include <liballoc.h>
+#include "memory.h"
+#include "util.h"
+#include "stdlib/stdio.h"
 
 int liballoc_lock()
 {

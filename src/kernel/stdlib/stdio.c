@@ -1,12 +1,11 @@
 #include "stdio.h"
 #include "../console/console.h"
 
+const char possibleChars[] = "0123456789ABCDEF";
+
 void putc(char c)
 {
-    char str[2]; // Create a temporary buffer for the string
-    str[0] = c;
-    str[1] = '\0';     // Add the null terminator
-    console_putc(str); // Print the valid, null-terminated string
+    consolePutC(c); // Print the valid, null-terminated string
 }
 
 void puts(const char *s)
@@ -141,12 +140,10 @@ void printf(const char *fmt, ...)
     }
 }
 
-const char possibleChars[] = "0123456789abcdef";
-
 int *printf_number(int *argp, int length, bool sign, int radix)
 {
     char buffer[32] = "";
-    uint32_t number;
+    uint32_t number = 0;
     int number_sign = 1;
     int pos = 0;
 

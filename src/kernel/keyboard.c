@@ -113,11 +113,11 @@ void keyboardHandler(struct InterruptRegisters *reg)
         {
             if (capsOn || capsLock)
             {
-                // printf("%c", uppercase[scanCode]);
+                printf("%c", uppercase[scanCode]);
             }
             else
             {
-                // printf("%c", lowercase[scanCode]);
+                printf("%c", lowercase[scanCode]);
             }
         }
     }

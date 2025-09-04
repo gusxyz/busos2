@@ -1,7 +1,7 @@
 ; Declare constants for the multiboot header.
 MBALIGN  equ  1 << 0            ; align loaded modules on page boundaries
 MEMINFO  equ  1 << 1            ; provide memory map
-USE_GFX  equ  0
+USE_GFX  equ  1 << 2
 MBFLAGS  equ  MBALIGN | MEMINFO | USE_GFX ; this is the Multiboot 'flag' field
 MAGIC    equ  0x1BADB002        ; 'magic number' lets bootloader find the header
 CHECKSUM equ -(MAGIC + MBFLAGS) ; checksum of above, to prove we are multiboot
@@ -12,12 +12,19 @@ align 4
 	dd MAGIC
 	dd MBFLAGS
 	dd CHECKSUM
-	dd 0, 0, 0, 0, 0
 	
-	dd 0
-	dd 800
-	dd 600
-	dd 32
+ ; Standard multiboot header fields (if MEMINFO is set)
+    dd 0    ; header_addr
+    dd 0    ; load_addr  
+    dd 0    ; load_end_addr
+    dd 0    ; bss_end_addr
+    dd 0    ; entry_addr
+    
+    ; Graphics fields (if USE_GFX is set)
+    dd 0    ; mode_type (0 = linear graphics)
+    dd 800  ; width
+    dd 600  ; height
+    dd 32   ; depth
 
 section .bss
 align 16

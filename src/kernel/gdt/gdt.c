@@ -19,9 +19,9 @@ void initGDT()
     writeTSS(5, 0x10, 0x0);
 
     gdt_flush((uint32_t)&gdt_ptr);
-    print("GDT Initialized.\n");
+    serial_putsf("GDT Initialized.\n");
     tss_flush((uint32_t)&gdt_ptr);
-    print("TSS Initialized.\n");
+    serial_putsf("TSS Initialized.\n");
 }
 
 void setGDTGate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran)

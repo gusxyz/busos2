@@ -125,25 +125,19 @@ uint32_t pmmAllocPageFrame()
 
 void pmmFreePageFrame(uint32_t paddr)
 {
-    // 1. Convert the physical address to a page frame number.
-    // A frame number is simply the address divided by the page size.
     uint32_t frameNum = paddr / PAGE_SIZE;
 
-    // 2. Calculate the position of the frame's bit in the bitmap.
     uint32_t byteIndex = frameNum / BYTE;
     uint32_t bitIndex = frameNum % BYTE;
 
-    // 3. Check if the page was actually allocated.
     if ((physicalMemoryBitmap[byteIndex] & (1 << bitIndex)) == 0)
     {
-        // This is a double free! You might want to handle this error,
-        // e.g., by printing a warning or panicking the kernel.
-        // For now, we'll just ignore it.
+
         return;
     }
 
-    // 4. Clear the bit to mark it as free.
-    // We do this by ANDing with the inverse of the bit we want to clear.
+    // Clear the bit to mark it as free.
+    //  We do this by ANDing with the inverse of the bit we want to clear.
     physicalMemoryBitmap[byteIndex] &= ~(1 << bitIndex);
 
     totalAlloc--;
@@ -156,7 +150,6 @@ void vmmUnmapPage(uint32_t virtualAddr)
 
     uint32_t *prevPageDir = 0;
 
-    // Handle potential access to kernel page directory
     if (virtualAddr >= KERNEL_START)
     {
         prevPageDir = memGetCurrentPageDir();
@@ -168,34 +161,28 @@ void vmmUnmapPage(uint32_t virtualAddr)
 
     uint32_t *pageDir = REC_PAGEDIR;
 
-    // Check if the corresponding page table exists
     if (pageDir[pdIndex] & PAGE_FLAG_PRESENT)
     {
         uint32_t *pt = REC_PAGETABLE(pdIndex);
 
-        // Check if the page itself is mapped
         if (pt[ptIndex] & PAGE_FLAG_PRESENT)
         {
-            // 1. Get the physical address from the Page Table Entry (PTE).
-            // We need to mask out the flags (lower 12 bits) to get the address.
+
             uint32_t paddr = pt[ptIndex] & ~0xFFF;
 
-            // 2. Free the physical frame associated with this page.
             if (paddr != 0)
-            { // Don't try to free the null page
+            {
                 pmmFreePageFrame(paddr);
             }
 
-            // 3. Clear the PTE to unmap the page.
+            //
             pt[ptIndex] = 0;
-            mem_num_vpages--; // Decrement your counter for mapped pages
+            mem_num_vpages--;
 
-            // 4. Invalidate the TLB entry for this virtual address.
             invalid(virtualAddr);
         }
     }
 
-    // Restore previous page directory if it was changed
     if (prevPageDir != 0)
     {
         if (prevPageDir != initial_page_dir)
@@ -238,30 +225,23 @@ void syncPageDirs()
 
 bool memIsPagePresent(uint32_t virtualAddr)
 {
-    // 1. Calculate the indices for the page directory and page table.
-    // The top 10 bits (31-22) are the page directory index.
+
     uint32_t pdIndex = virtualAddr >> 22;
 
-    // The next 10 bits (21-12) are the page table index.
     uint32_t ptIndex = (virtualAddr >> 12) & 0x3FF;
 
-    // 2. Access the Page Directory Entry (PDE).
     uint32_t *pageDir = REC_PAGEDIR;
     uint32_t pde = pageDir[pdIndex];
 
-    // 3. Check if the page table itself is present.
-    // If the PDE's present flag is not set, the entire 4MB region
-    // covered by this page table is unmapped.
     if (!(pde & PAGE_FLAG_PRESENT))
     {
         return false;
     }
 
-    // 4. If the page table exists, access the Page Table Entry (PTE).
     uint32_t *pageTable = REC_PAGETABLE(pdIndex);
     uint32_t pte = pageTable[ptIndex];
 
-    // 5. Check if the page is present.
+    // Check if the page is present.
     // The present flag in the PTE determines if this specific 4KB page is mapped.
     if (!(pte & PAGE_FLAG_PRESENT))
     {

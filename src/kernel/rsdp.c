@@ -138,11 +138,9 @@ void rsdt_parse()
     uint32_t rsdt_phys_addr = g_rsdp->RsdtAddress;
     printf("Attempting to parse RSDT at physical address: 0x%x\n", rsdt_phys_addr);
 
-    // --- STAGE 1: CALCULATE PAGE AND OFFSET ---
     uint32_t phys_page_base = rsdt_phys_addr & ~0xFFF; // Address of the page the RSDT starts in
     uint32_t page_offset = rsdt_phys_addr & 0xFFF;     // Offset of the RSDT within that page
 
-    // --- STAGE 2: TEMPORARY MAPPING ---
     // Map just the first page to read the header and get the full length.
     void *mapped_page = vmmAlloc(phys_page_base, 1, PAGE_FLAG_PRESENT);
 
@@ -179,7 +177,6 @@ void rsdt_parse()
     // We are done with the temporary one-page mapping.
     vmmUnmapPage((uint32_t)mapped_page);
 
-    // --- STAGE 4: PERMANENT MAPPING ---
     // Now, calculate the total number of pages needed for the *entire* table.
     // This correctly handles tables that cross page boundaries.
     size_t num_pages = (page_offset + real_length + PAGE_SIZE - 1) / PAGE_SIZE;
@@ -195,11 +192,10 @@ void rsdt_parse()
     // The pointer to the full RSDT is again at the offset from the base.
     ACPISDTHeader_t *full_rsdt = (ACPISDTHeader_t *)((uintptr_t)full_mapped_base + page_offset);
 
-    // --- STAGE 5: VALIDATE & PARSE ---
     if (!rsdt_validate(full_rsdt))
     {
         printf("FATAL: Full RSDT checksum is invalid!\n");
-        vmmUnmapRegion((uint32_t)full_mapped_base, num_pages); // Clean up
+        vmmUnmapRegion((uint32_t)full_mapped_base, num_pages);
         return;
     }
 

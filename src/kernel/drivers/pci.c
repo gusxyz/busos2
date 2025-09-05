@@ -27,12 +27,7 @@ uint32_t pciConfigReadDWord(uint8_t bus, uint8_t slot, uint8_t func, uint8_t off
     uint32_t lbus = (uint32_t)bus;
     uint32_t lslot = (uint32_t)slot;
     uint32_t lfunc = (uint32_t)func;
-
-    // Create the 32-bit address for the PCI configuration space.
-    // The (offset & 0xFC) part ensures we are aligned to a 4-byte boundary.
     address = (uint32_t)((lbus << 16) | (lslot << 11) | (lfunc << 8) | (offset & 0xFC) | 0x80000000);
-
-    // Write the address to the Address Port (0xCF8).
     outl(0xCF8, address);
 
     // Read the full 32-bit DWord from the Data Port (0xCFC) and return it.
@@ -41,9 +36,6 @@ uint32_t pciConfigReadDWord(uint8_t bus, uint8_t slot, uint8_t func, uint8_t off
 
 uint8_t pciGetSecondaryBus(uint8_t bus, uint8_t slot, uint8_t func)
 {
-    // Reads the DWord at offset 0x18.
-    // For a Type 1 Header (a bridge), this contains:
-    // [Subordinate Bus Number | Secondary Bus Number | Primary Bus Number | 0x00]
     uint32_t reg = pciConfigReadDWord(bus, slot, func, 0x18);
 
     // The Secondary Bus Number is in bits 8-15.
@@ -56,7 +48,6 @@ uint16_t pciConfigReadWord(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offs
 
     // (offset & 2) * 8) = 0 will choose the first word of the 32-bit register
     return (uint16_t)((dWord >> ((offset & 2) * 8)) & 0xFFFF);
-    ;
 }
 
 pci_device_t *pciFindDevice(uint16_t vendorId, uint8_t classId, uint8_t subclass)

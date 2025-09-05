@@ -1,9 +1,9 @@
-#include "memory.h"
-#include "multiboot.h"
-#include "util.h"
+#include <memory.h>
+#include <multiboot.h>
+#include <util.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include "stdlib/stdio.h"
+#include <stdio.h>
 
 static uint32_t pageFrameMin;
 static uint32_t pageFrameMax;

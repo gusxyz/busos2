@@ -1,7 +1,7 @@
 #define SSFN_CONSOLEBITMAP_TRUECOLOR
-#include "console.h"
-#include "../vesa/vbe.h"
-#include "../util.h"
+#include <console.h>
+#include <vbe.h>
+#include <util.h>
 #include <ssfn.h>
 
 extern uint32_t vbe_width;

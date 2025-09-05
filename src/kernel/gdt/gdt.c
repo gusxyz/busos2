@@ -1,6 +1,6 @@
-#include "gdt.h"
-#include "../vga.h"
-#include "../util.h"
+#include <gdt.h>
+#include <vga.h>
+#include <util.h>
 
 struct gdt_entry_struct gdt_entries[6];
 struct gdt_ptr_struct gdt_ptr;

@@ -1,7 +1,7 @@
-#include "rsdp.h"
-#include "util.h"
-#include "stdlib/stdio.h"
-#include "memory.h"
+#include <rsdp.h>
+#include <util.h>
+#include <stdio.h>
+#include <memory.h>
 
 XSDP_t *g_xsdp = NULL;
 RSDP_t *g_rsdp = NULL;

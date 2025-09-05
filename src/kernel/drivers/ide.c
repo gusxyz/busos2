@@ -1,8 +1,8 @@
-#include "ide.h"
+#include <drivers/ide.h>
 #include <stddef.h>
-#include "../util.h"
-#include "../timer.h"
-#include "../idt/idt.h"
+#include <util.h>
+#include <timer.h>
+#include <idt.h>
 #include <liballoc.h>
 
 ide_channel_register_t channels[2];

@@ -1,13 +1,11 @@
-#include "timer.h"
-#include "idt/idt.h"
+#include <timer.h>
+#include <idt.h>
 
-uint32_t countDown = 0;
-uint64_t ticks;
-const uint32_t freq = 100;
+uint64_t ticks = 0;
+static const uint32_t freq = 1000; // 1 ms
 
 void initTimer()
 {
-    ticks = 0;
     irq_install_handler(0, onIrq0);
 
     // 1.1931816666 MHz -> 119318.16666 Hz
@@ -22,15 +20,18 @@ void initTimer()
 
 void onIrq0(struct InterruptRegisters *reg)
 {
-    ticks += 1;
-    if (countDown > 0)
-        countDown -= 1;
+    ticks++;
 }
+
 void sleep(uint32_t millis)
 {
-    countDown = millis;
-    while (countDown > 0)
+
+    uint32_t startTicks = ticks;
+    uint32_t ticksToWait = millis;
+    uint32_t endTicks = startTicks + ticksToWait;
+
+    while (ticks < endTicks)
     {
-        __asm__ volatile("hlt");
+        asm volatile("hlt");
     }
 }

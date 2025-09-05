@@ -2,11 +2,15 @@
 INCLUDE_DIR=sysroot/include
 # Compiler and flags
 CC = /home/gus/opt/cross/bin/i686-elf-gcc
+CXX = /home/gus/opt/cross/bin/i686-elf-g++
+GDB = ~/opt/cross/bin/i686-elf-gdb os/boot/kernel.bin
 ASM = nasm
-LD = ld
-CFLAGS =  -g -ffreestanding -Wall -Wextra -O2 -I $(INCLUDE_DIR)
+QEMU = qemu-system-i386
+LD = /home/gus/opt/cross/bin/i686-elf-ld
+CFLAGS = -m32 -g -ffreestanding -fno-exceptions -Wall -Wextra -I $(INCLUDE_DIR)
+CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti -std=c++11
 ASMFLAGS = -f elf32
-LDFLAGS = -m elf_i386 -T linker.ld
+LDFLAGS = -T linker.ld
 
 # Directories
 SRC_DIR = src
@@ -20,6 +24,7 @@ ISO_DIR = $(BUILD_DIR)
 # 1. Find all source files using 'shell find'. This is robust.
 C_SOURCES := $(shell find $(KERNEL_SRC_DIR) -name '*.c')
 C_SOURCES += $(shell find $(INCLUDE_DIR) -name '*.c') # Add liballoc.c
+CXX_SOURCES := $(shell find $(SRC_DIR) -name '*.cpp')
 
 ASM_SOURCES := $(shell find $(KERNEL_SRC_DIR) -name '*.s')
 SFN_SOURCES := $(shell find $(KERNEL_SRC_DIR) -name '*.sfn')
@@ -27,11 +32,12 @@ SFN_SOURCES := $(shell find $(KERNEL_SRC_DIR) -name '*.sfn')
 # 2. Generate the list of object files from the source files.
 #    'notdir' gets the filename (e.g., kernel.c), 'patsubst' changes .c to .o.
 C_OBJS := $(patsubst %.c,%.o,$(notdir $(C_SOURCES)))
+CXX_OBJS := $(patsubst %.cpp,%.o,$(notdir $(CXX_SOURCES)))
 ASM_OBJS := $(patsubst %.s,%.o,$(notdir $(ASM_SOURCES)))
 SFN_OBJS := $(patsubst %.sfn,%.o,$(notdir $(SFN_SOURCES)))
 
 # 3. Create the final OBJECTS list by adding the build directory prefix.
-OBJECTS := $(addprefix $(INTERMEDIATE_DIR)/, $(C_OBJS) $(ASM_OBJS) $(SFN_OBJS))
+OBJECTS := $(addprefix $(INTERMEDIATE_DIR)/, $(C_OBJS) $(CXX_OBJS) $(ASM_OBJS) $(SFN_OBJS))
 
 # 4. Tell 'make' where to find the source files for the generic rules below.
 VPATH := $(shell find $(SRC_DIR) $(INCLUDE_DIR) -type d | tr '\n' ':')
@@ -51,6 +57,10 @@ all: $(ISO_IMAGE)
 $(INTERMEDIATE_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
+# Generic rule to compile ANY .cpp file found via VPATH
+$(INTERMEDIATE_DIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Generic rule to assemble ANY .s file found via VPATH
 $(INTERMEDIATE_DIR)/%.o: %.s
@@ -65,7 +75,7 @@ $(INTERMEDIATE_DIR)/%.o: %.sfn
 # Link kernel binary
 $(KERNEL_BIN): $(OBJECTS)
 	@mkdir -p $(dir $@)
-	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
+	$(CXX) $(LDFLAGS) -o $@ -ffreestanding -O2 -nostdlib $(OBJECTS) -lgcc 
 
 # ... (The rest of your Makefile: grub-mkrescue, clean, run, etc. stays the same) ...
 	
@@ -80,7 +90,10 @@ clean:
 .PHONY: all clean
 
 run: os/boot/kernel.bin
-	qemu-system-i386 -cdrom build/bus.iso -serial stdio -monitor none
+	$(QEMU) -cdrom build/bus.iso -serial stdio -monitor none
 
 debug: os/boot/kernel.bin
-	qemu-system-i386 -cdrom build/bus.iso -serial stdio -monitor stdio -s -S
+	$(QEMU) -cdrom build/bus.iso -serial stdio -monitor none -s -S
+
+gdb: os/boot/kernel.bin
+	$(GDB)

@@ -1,6 +1,37 @@
-#include "kernel.h"
+#include <liballoc.h>
+#include <stdio.h>
+#include <gdt.h>
+#include <idt.h>
+#include <timer.h>
+#include <multiboot.h>
+#include <memory.h>
+#include <keyboard.h>
+#include <drivers/pci.h>
+#include <drivers/ide.h>
+#include <filesystem.h>
+#include <vbe.h>
+#include <console.h>
+#include <rsdp.h>
 
 uint32_t g_ebda_addr = 0;
+
+void my_new_task_function()
+{
+    while (1)
+    {
+        printf("Hello from task\n");
+        sleep(1000); // Your sleep function will work here
+    }
+}
+
+void some_other_function()
+{
+    while (1)
+    {
+        printf("This is the second task speaking!\n");
+        sleep(1500);
+    }
+}
 
 void kernel_main(uint32_t magic, multiboot_info_t *bootInfo)
 {
@@ -41,11 +72,13 @@ void kernel_main(uint32_t magic, multiboot_info_t *bootInfo)
     consoleInit();
 
     // devices
-    initKeyboard();
-    pciInit(true);
-    initIDEController();
     acpiInit(g_ebda_addr);
+    pciInit(true);
     rsdt_parse();
+
+    initIDEController();
+    initKeyboard();
+    printf("Kernel Booted in %ims\n\0", ticks);
     // readAndParsePVD(0); // drive 0
     // printfileSystemTree(0); // dear god its jason borne
     consoleMarkInputStart();

@@ -1,7 +1,7 @@
-#include "keyboard.h"
-#include "timer.h"
-#include "stdlib/stdio.h"
-#include "idt/idt.h"
+#include <keyboard.h>
+#include <timer.h>
+#include <stdio.h>
+#include <idt.h>
 #include <stdbool.h>
 
 bool capsOn;

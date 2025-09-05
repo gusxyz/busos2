@@ -1,7 +1,6 @@
-#include "vbe.h"
-#include "../memory.h"
-#include <liballoc.h>
-#include "../util.h"
+#include <vbe.h>
+#include <memory.h>
+#include <util.h>
 
 uint32_t scanline;
 uint32_t vbe_width;

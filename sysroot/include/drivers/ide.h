@@ -1,8 +1,8 @@
 #pragma once
-#include "pci.h"
-#include "../util.h"
-#include "../stdlib/stdio.h"
-#include "atadefs.h"
+#include <drivers/pci.h>
+#include <util.h>
+#include <stdio.h>
+#include <drivers/atadefs.h>
 
 typedef struct ide_channel_register
 {

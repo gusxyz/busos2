@@ -1,5 +1,5 @@
-#include "stdio.h"
-#include "../console/console.h"
+#include <stdio.h>
+#include <console.h>
 
 const char possibleChars[] = "0123456789ABCDEF";
 

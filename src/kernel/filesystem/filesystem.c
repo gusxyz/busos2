@@ -1,8 +1,8 @@
-#include "filesystem.h"
-#include "../drivers/ide.h"
+#include <filesystem.h>
+#include <drivers/ide.h>
 #include <liballoc.h>
-#include "../stdlib/stdio.h"
-#include "../util.h"
+#include <stdio.h>
+#include <util.h>
 
 int isoFilenameCompare(const char *isoName, int isoLen, const char *cName)
 {

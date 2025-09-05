@@ -38,5 +38,6 @@ uint8_t pciGetHeaderType(uint8_t bus, uint8_t device, uint8_t func);
 uint8_t pciGetProgIF(uint8_t bus, uint8_t device, uint8_t func);
 void checkDevice(uint8_t bus, uint8_t device);
 void checkAllBuses();
+void checkBus(uint8_t bus);
 void checkFunction(uint8_t bus, uint8_t slot, uint8_t func);
 pci_device_t *pciFindDevice(uint16_t vendorId, uint8_t classId, uint8_t subclass);

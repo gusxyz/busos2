@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <console.h>
+#include <spinlock.h>
 
 const char possibleChars[] = "0123456789ABCDEF";
+extern spinlock_t console_lock;
 
 void putc(char c)
 {
@@ -17,13 +19,16 @@ void puts(const char *s)
     }
 }
 
-void printf(const char *fmt, ...)
+void vprintf(const char *fmt, va_list args)
 {
     int *argp = (int *)&fmt;
     int state = PRINTF_STATE_START;
     int length = PRINTF_LENGTH_START;
     int radix = 10;
     bool sign = false;
+    va_list argsCopy;
+
+    va_copy(argsCopy, args);
 
     argp++;
     while (*fmt)
@@ -86,20 +91,10 @@ void printf(const char *fmt, ...)
             switch (*fmt)
             {
             case 'c':
-                putc((char)*argp);
-                argp++;
+                putc((char)va_arg(argsCopy, int));
                 break;
             case 's':
-                if (length == PRINTF_LENGTH_LONG || length == PRINTF_LENGTH_LONG_LONG)
-                {
-                    puts(*(const char **)argp);
-                    argp += 2;
-                }
-                else
-                {
-                    puts(*(const char **)argp);
-                    argp++;
-                }
+                puts(va_arg(argsCopy, const char *));
                 break;
             case '%':
                 putc('%');
@@ -108,24 +103,24 @@ void printf(const char *fmt, ...)
             case 'i':
                 radix = 10;
                 sign = true;
-                argp = printf_number(argp, length, sign, radix);
+                printf_number_va(argsCopy, length, sign, radix);
                 break;
             case 'u':
                 radix = 10;
                 sign = false;
-                argp = printf_number(argp, length, sign, radix);
+                printf_number_va(argsCopy, length, sign, radix);
                 break;
             case 'X':
             case 'x':
             case 'p':
                 radix = 16;
                 sign = false;
-                argp = printf_number(argp, length, sign, radix);
+                printf_number_va(argsCopy, length, sign, radix);
                 break;
             case 'o':
                 radix = 8;
                 sign = false;
-                argp = printf_number(argp, length, sign, radix);
+                printf_number_va(argsCopy, length, sign, radix);
                 break;
             default:
                 break;
@@ -140,91 +135,121 @@ void printf(const char *fmt, ...)
     }
 }
 
-int *printf_number(int *argp, int length, bool sign, int radix)
+void printf(const char *fmt, ...)
 {
-    char buffer[32] = "";
-    uint32_t number = 0;
-    int number_sign = 1;
-    int pos = 0;
+    spinlock_acquire(&console_lock);
 
-    switch (length)
-    {
-    case PRINTF_LENGTH_SHORT_SHORT:
-    case PRINTF_LENGTH_SHORT:
-    case PRINTF_LENGTH_START:
-        if (sign)
-        {
-            int n = *argp;
-            if (n < 0)
-            {
-                n = -n;
-                number_sign = -1;
-            }
-            number = (uint32_t)n;
-        }
-        else
-        {
-            number = *(uint32_t *)argp;
-        }
-        argp++;
-        break;
-    case PRINTF_LENGTH_LONG:
-        if (sign)
-        {
-            long int n = *(long int *)argp;
-            if (n < 0)
-            {
-                n = -n;
-                number_sign = -1;
-            }
-            number = (uint32_t)n;
-        }
-        else
-        {
-            number = *(uint32_t *)argp;
-        }
-        argp += 2;
-        break;
-    case PRINTF_LENGTH_LONG_LONG:
-        if (sign)
-        {
-            long long int n = *(long long int *)argp;
-            if (n < 0)
-            {
-                n = -n;
-                number_sign = -1;
-            }
-            number = (uint32_t)n;
-        }
-        else
-        {
-            number = *(uint32_t *)argp;
-        }
-        argp += 4;
-        break;
-    }
+    // 2. We need to handle variadic arguments correctly.
+    va_list args;
+    va_start(args, fmt);
+    // Call a 'vprintf' version that uses the va_list.
+    // You will likely need to create this from your existing printf logic.
+    // For simplicity, let's assume your printf can be called like this for now.
+    // A proper vprintf implementation is the robust solution.
+    // If you don't have one, we can adapt your existing printf.
+    vprintf(fmt, args);
+    va_end(args);
 
-    do
-    {
-        uint32_t rem = number % radix;
-        number = number / radix;
-
-        buffer[pos++] = possibleChars[rem];
-    } while (number > 0);
-
-    if (sign && number_sign < 0)
-    {
-        buffer[pos++] = '-';
-    }
-
-    while (--pos >= 0)
-    {
-        putc(buffer[pos]);
-    }
-
-    return argp;
+    // 3. Release the lock so other tasks can print.
+    spinlock_release(&console_lock);
 }
 
+void printf_number_va(va_list args, int length, bool sign, int radix)
+{
+    uint32_t value_unsigned;
+    int32_t value_signed;
+    char buffer[32]; // Enough for 32-bit numbers in any base
+    char *ptr = buffer;
+
+    // Extract the appropriate value based on length and sign
+    switch (length)
+    {
+    case PRINTF_LENGTH_SHORT_SHORT: // char
+        if (sign)
+        {
+            value_signed = (int32_t)(signed char)va_arg(args, int);
+        }
+        else
+        {
+            value_unsigned = (uint32_t)(unsigned char)va_arg(args, int);
+        }
+        break;
+
+    case PRINTF_LENGTH_SHORT: // short
+        if (sign)
+        {
+            value_signed = (int32_t)(short)va_arg(args, int);
+        }
+        else
+        {
+            value_unsigned = (uint32_t)(unsigned short)va_arg(args, int);
+        }
+        break;
+
+    case PRINTF_LENGTH_LONG: // long (32-bit on 32-bit systems)
+        if (sign)
+        {
+            value_signed = (int32_t)va_arg(args, long);
+        }
+        else
+        {
+            value_unsigned = (uint32_t)va_arg(args, unsigned long);
+        }
+        break;
+
+    case PRINTF_LENGTH_LONG_LONG: // long long (64-bit, but we'll handle as 32-bit for compatibility)
+        // On 32-bit systems, you might want to implement proper 64-bit support
+        // or limit to 32-bit values. For simplicity, we'll treat as 32-bit:
+        if (sign)
+        {
+            value_signed = (int32_t)va_arg(args, long long);
+        }
+        else
+        {
+            value_unsigned = (uint32_t)va_arg(args, unsigned long long);
+        }
+        break;
+
+    default: // int (default)
+        if (sign)
+        {
+            value_signed = (int32_t)va_arg(args, int);
+        }
+        else
+        {
+            value_unsigned = (uint32_t)va_arg(args, unsigned int);
+        }
+        break;
+    }
+
+    // Convert number to string based on sign
+    if (sign)
+    {
+        if (value_signed < 0)
+        {
+            putc('-');
+            value_unsigned = (uint32_t)(-value_signed);
+        }
+        else
+        {
+            value_unsigned = (uint32_t)value_signed;
+        }
+    }
+
+    // Convert to string in the specified radix
+    do
+    {
+        uint32_t digit = value_unsigned % radix;
+        value_unsigned /= radix;
+        *ptr++ = (digit < 10) ? ('0' + digit) : ('A' + digit - 10);
+    } while (value_unsigned > 0);
+
+    // Print the string in reverse order
+    while (ptr > buffer)
+    {
+        putc(*--ptr);
+    }
+}
 int strcmp(const char *s1, const char *s2)
 {
     unsigned char c1, c2;

@@ -1,8 +1,11 @@
+#pragma once
 #ifndef TIMER_H
 #define TIMER_H
-#pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
 #include <util.h>
+
 #ifdef __cplusplus
 extern "C"
 {

@@ -12,6 +12,7 @@
 #include <vbe.h>
 #include <console.h>
 #include <rsdp.h>
+#include <scheduler/scheduler.h>
 
 uint32_t g_ebda_addr = 0;
 
@@ -20,16 +21,26 @@ void my_new_task_function()
     while (1)
     {
         printf("Hello from task\n");
-        sleep(1000); // Your sleep function will work here
+        sleep(500); // Your sleep function will work here
     }
 }
 
 void some_other_function()
 {
+    bool flag = false;
     while (1)
     {
+        flag = !flag;
         printf("This is the second task speaking!\n");
-        sleep(1500);
+
+        if (flag)
+        {
+            sleep(750);
+        }
+        else
+        {
+            sleep(250);
+        }
     }
 }
 
@@ -75,13 +86,20 @@ void kernel_main(uint32_t magic, multiboot_info_t *bootInfo)
     acpiInit(g_ebda_addr);
     pciInit(true);
     rsdt_parse();
+    scheduler_init();
 
     initIDEController();
     initKeyboard();
     printf("Kernel Booted in %ims\n\0", ticks);
+
+    scheduler_create_task((uint32_t)&my_new_task_function, true);
+    scheduler_create_task((uint32_t)&some_other_function, true);
+    asm volatile("sti");
+
     // readAndParsePVD(0); // drive 0
     // printfileSystemTree(0); // dear god its jason borne
-    consoleMarkInputStart();
+    // consoleMarkInputStart();
+    // This is now a proper power-saving idle loop
     for (;;)
-        ;
+        asm volatile("hlt"); // <<<<<<<<<<< CHANGE THE LOOP TO THIS
 }

@@ -1,8 +1,10 @@
 #include <timer.h>
 #include <idt.h>
+#include <scheduler/scheduler.h>
 
 uint64_t ticks = 0;
 static const uint32_t freq = 1000; // 1 ms
+bool schedulerEnabled;
 
 void initTimer()
 {
@@ -21,17 +23,15 @@ void initTimer()
 void onIrq0(struct InterruptRegisters *reg)
 {
     ticks++;
+    if (schedulerEnabled)
+    {
+        scheduler_wake_sleeping_tasks(ticks);
+
+        scheduler_tick();
+    }
 }
 
 void sleep(uint32_t millis)
 {
-
-    uint32_t startTicks = ticks;
-    uint32_t ticksToWait = millis;
-    uint32_t endTicks = startTicks + ticksToWait;
-
-    while (ticks < endTicks)
-    {
-        asm volatile("hlt");
-    }
+    task_sleep(millis);
 }

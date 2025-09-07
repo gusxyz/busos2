@@ -154,7 +154,6 @@ void checkDevice(uint8_t bus, uint8_t device)
     uint8_t headerType = pciGetHeaderType(bus, device, 0);
     if ((headerType & 0x80) != 0)
     {
-        // It's a multi-function device, so check remaining functions
         for (function = 1; function < 8; function++)
         {
             if (pciGetVendorID(bus, device, function) != 0xFFFF)
@@ -174,7 +173,6 @@ void checkFunction(uint8_t bus, uint8_t slot, uint8_t func)
     uint8_t subclass = pciGetSubclass(bus, slot, func);
     uint8_t header_type = pciGetHeaderType(bus, slot, func);
 
-    // Add the device to our list
     pci_device_t *device = &pciDevices[pciDeviceCount];
     device->bus = bus;
     device->slot = slot;
@@ -185,10 +183,8 @@ void checkFunction(uint8_t bus, uint8_t slot, uint8_t func)
     device->subclass = subclass;
     device->header_type = header_type;
     device->prog_if = pciGetProgIF(bus, slot, func);
-    // ... (rest of your bar reading code is fine) ...
     pciDeviceCount++;
 
-    // THIS IS THE CRITICAL FIX: Check if it's a bridge and scan the next bus.
     if (class_code == 0x06 && subclass == 0x04)
     {
         uint8_t secondaryBus = pciGetSecondaryBus(bus, slot, func);

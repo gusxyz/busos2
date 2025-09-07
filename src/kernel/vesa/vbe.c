@@ -1,6 +1,7 @@
 #include <vbe.h>
 #include <memory.h>
 #include <util.h>
+#define CEIL_DIV(a, b) (((a + b) - 1) / b)
 
 uint32_t scanline;
 uint32_t vbe_width;

@@ -4,13 +4,21 @@
 #include <stdint.h>
 #include <stddef.h>
 #define CEIL_DIV(a, b) (((a + b) - 1) / b)
+struct InterruptRegisters
+{
+    uint32_t cr2;
+    uint32_t ds;
+    uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
+    uint32_t int_no, err_code;
+    uint32_t eip, csm, eflags, useresp, ss;
+};
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
     void *memset(void *s, int c, size_t n);
+    void *memmove(void *dest, const void *src, size_t n);
     void *memcpy(void *destination, void *source, size_t num);
     int memcmp(const void *__s1, const void *__s2, size_t __n);
     int strlen(char *s);
@@ -80,14 +88,6 @@ extern "C"
         return ret;
     };
 
-    extern struct InterruptRegisters
-    {
-        uint32_t cr2;
-        uint32_t ds;
-        uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
-        uint32_t int_no, err_code;
-        uint32_t eip, csm, eflags, useresp, ss;
-    };
 #ifdef __cplusplus
 }
 #endif

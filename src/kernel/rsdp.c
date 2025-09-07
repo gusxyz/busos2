@@ -66,7 +66,7 @@ void acpiInit(uint32_t ptr)
 
     // --- DEBUG STEP 1: PRINT THE PHYSICAL ADDRESS OF THE RSDP ---
     // Since find_rsdp scans physical memory, rsdp_base is a physical address.
-    printf("DEBUG: RSDP signature found at PHYSICAL address: 0x%x\n", (uint32_t)rsdp_base);
+    // printf("DEBUG: RSDP signature found at PHYSICAL address: 0x%x\n", (uint32_t)rsdp_base);
 
     // --- NOW, VALIDATE AND INTERPRET ---
 
@@ -77,7 +77,7 @@ void acpiInit(uint32_t ptr)
     }
 
     // --- DEBUG STEP 2: PRINT THE PHYSICAL ADDRESS STORED *INSIDE* THE RSDP ---
-    printf("DEBUG: RSDP claims the RSDT is at PHYSICAL address: 0x%x\n", rsdp_base->RsdtAddress);
+    // printf("DEBUG: RSDP claims the RSDT is at PHYSICAL address: 0x%x\n", rsdp_base->RsdtAddress);
 
     printf("RSDP found with valid checksum. OEMID: %s, Revision: %d\n", rsdp_base->OEMID, rsdp_base->Revision);
 

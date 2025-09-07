@@ -28,7 +28,7 @@ typedef struct ide_device
 void initIDEController();
 void idePrintProg(pci_device_t *device);
 void ideInitialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, unsigned int BAR3, unsigned int BAR4);
-uint8_t ideRead(uint8_t channel, uint8_t register);
+uint8_t ideRead(uint8_t channel, uint8_t reg);
 void ideWrite(uint8_t channel, uint8_t reg, uint8_t data);
 uint8_t idePrintError(unsigned int drive, uint8_t err);
 void ideReadBuffer(uint8_t channel, uint8_t reg, unsigned int buffer, unsigned int quads);

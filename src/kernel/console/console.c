@@ -3,6 +3,7 @@
 #include <vbe.h>
 #include <util.h>
 #include <ssfn.h>
+#include <spinlock.h>
 
 extern uint32_t vbe_width;
 extern uint32_t vbe_height;
@@ -10,12 +11,11 @@ extern ssfn_font_t _binary_src_kernel_fonts_font_sfn_start;
 ssfn_font_t *ssfn_src;
 ssfn_buf_t ssfn_dst;
 
-// Variables to track the start of the user's editable input line
 static uint32_t input_start_x = 0;
 static uint32_t input_start_y = 0;
 #define MONOSPACE ssfn_src->width / 1.5
+extern spinlock_t console_lock = false;
 
-// Initialize console variables
 void consoleInit()
 {
     serial_putsf("Initializing Console...\n");
@@ -28,11 +28,14 @@ void consoleInit()
     ssfn_dst.y = 0;
 }
 
-// CORRECTED: Prints the prompt first, then marks the editable starting point.
+void clearConsole()
+{
+    memset(ssfn_dst.ptr, 0, vbe_height * ssfn_dst.p);
+}
+
 void consoleMarkInputStart()
 {
     createPrompt();
-
     input_start_x = ssfn_dst.x;
     input_start_y = ssfn_dst.y;
 }
@@ -40,28 +43,88 @@ void consoleMarkInputStart()
 void createPrompt()
 {
     ssfn_putc('>');
-    ssfn_dst.x = ssfn_src->width; // Position cursor after the '>'
+    ssfn_dst.x = ssfn_src->width;
     ssfn_putc(' ');
-    ssfn_dst.x = (ssfn_src->width * 2) / 1.5; // Position cursor after the ' '
+    ssfn_dst.x = (ssfn_src->width * 2) / 1.5;
 }
 
-// CORRECTED: Erases a block exactly the size of the font's max dimensions.
-void clear_char_at_cursor()
+void clearCharAtCursor()
 {
     uint32_t *fb_ptr = (uint32_t *)ssfn_dst.ptr;
     uint32_t pitch_in_pixels = ssfn_dst.p / 4;
 
-    // Loop from current y to y + height (no +1)
-    for (unsigned int row = ssfn_dst.y; row < ssfn_dst.y + ssfn_src->height; row++)
+    // Calculate the actual area to clear (current cursor position)
+    uint32_t clear_x = ssfn_dst.x;
+    uint32_t clear_y = ssfn_dst.y;
+
+    // Make sure we don't go out of bounds
+    if (clear_x >= vbe_width || clear_y >= vbe_height)
     {
-        // Loop from current x to x + width (no +1)
-        for (unsigned int col = ssfn_dst.x; col < ssfn_dst.x + ssfn_src->width; col++)
+        return;
+    }
+
+    // Calculate the actual width to clear (minimum of font width or remaining space)
+    uint32_t clear_width = ssfn_src->width;
+    if (clear_x + clear_width > vbe_width)
+    {
+        clear_width = vbe_width - clear_x;
+    }
+
+    // Calculate the actual height to clear
+    uint32_t clear_height = ssfn_src->height;
+    if (clear_y + clear_height > vbe_height)
+    {
+        clear_height = vbe_height - clear_y;
+    }
+
+    // Clear the character area
+    for (uint32_t row = 0; row < clear_height; row++)
+    {
+        for (uint32_t col = 0; col < clear_width; col++)
         {
-            if (col < vbe_width && row < vbe_height)
+            uint32_t pixel_x = clear_x + col;
+            uint32_t pixel_y = clear_y + row;
+
+            if (pixel_x < vbe_width && pixel_y < vbe_height)
             {
-                fb_ptr[row * pitch_in_pixels + col] = ssfn_dst.bg;
+                fb_ptr[pixel_y * pitch_in_pixels + pixel_x] = ssfn_dst.bg;
             }
         }
+    }
+}
+void consoleScroll()
+{
+    uint32_t font_height = ssfn_src->height;
+    uint32_t pitch = ssfn_dst.p;
+    uint8_t *dest = ssfn_dst.ptr;
+    uint8_t *src = ssfn_dst.ptr + (pitch * font_height);
+
+    // Calculate the size to move (everything except the top line)
+    size_t move_size = pitch * (vbe_height - font_height);
+
+    memmove(dest, src, move_size);
+
+    // Clear the last line (now empty after scrolling)
+    uint8_t *last_line_start = ssfn_dst.ptr + (pitch * (vbe_height - font_height));
+    memset(last_line_start, 0, pitch * font_height);
+}
+
+void isCursorVisible()
+{
+    // Handle horizontal wrapping
+    if (ssfn_dst.x >= vbe_width)
+    {
+        ssfn_dst.x = 0;
+        ssfn_dst.y += ssfn_src->height;
+    }
+
+    // Handle vertical scrolling
+    if (ssfn_dst.y + ssfn_src->height > vbe_height)
+    {
+        consoleScroll();
+        // After scrolling, adjust all y positions
+        ssfn_dst.y -= ssfn_src->height;
+        input_start_y -= ssfn_src->height;
     }
 }
 
@@ -71,10 +134,7 @@ void consolePutC(char c)
     {
         ssfn_dst.x = 0;
         ssfn_dst.y += ssfn_src->height;
-        serial_putc('\n');
-
-        // Let the main kernel loop decide when to reprint the prompt.
-        // This makes the console logic cleaner.
+        isCursorVisible(); // Check if we need to scroll after newline
     }
     else if (c == '\r')
     {
@@ -82,52 +142,29 @@ void consolePutC(char c)
     }
     else if (c == '\b')
     {
-        // Check if the cursor is within the editable area
         if (ssfn_dst.y > input_start_y || (ssfn_dst.y == input_start_y && ssfn_dst.x > input_start_x))
         {
-            // Handle wrapping to the previous line
-            if (ssfn_dst.x == 0)
+            ssfn_dst.x -= ssfn_src->width;
+
+            if (ssfn_dst.x < 0 && ssfn_dst.y > input_start_y)
             {
                 ssfn_dst.y -= ssfn_src->height;
-                // Go to the last character grid position on the line
-                ssfn_dst.x = vbe_width - (vbe_width % MONOSPACE) - MONOSPACE;
-            }
-            else
-            {
-                // Just move back one character width
-                ssfn_dst.x -= MONOSPACE;
+                ssfn_dst.x = vbe_width - ssfn_src->width;
             }
 
-            clear_char_at_cursor();
-
-            serial_putc('\b');
-            serial_putc(' ');
+            clearCharAtCursor();
             serial_putc('\b');
         }
     }
     else
     {
-        // --- CRITICAL FIX: FORCING MONOSPACED BEHAVIOR ---
+        // Check if we need to scroll BEFORE drawing
+        isCursorVisible();
 
-        // 1. Check for line wrapping before drawing.
-        if (ssfn_dst.x + ssfn_src->width > vbe_width)
-        {
-            ssfn_dst.x = 0;
-            ssfn_dst.y += ssfn_src->height;
-        }
-
-        // 2. Store the current grid position.
-        uint32_t current_x = ssfn_dst.x;
-
-        // 3. Render the character. This advances ssfn_dst.x by a variable amount.
         ssfn_putc(c);
         serial_putc(c);
 
-        // 4. Force the cursor to the next fixed-width grid position.
-        //    This makes printing and backspacing symmetrical.
-        ssfn_dst.x = current_x + MONOSPACE;
+        // Check if we need to scroll AFTER drawing
+        isCursorVisible();
     }
-
-    // Optional: Keep this for debugging if you want.
-    // serial_putsf("x=%i ", ssfn_dst.x);
 }

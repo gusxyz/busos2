@@ -5,3 +5,4 @@ void consoleInit();
 void consolePutC(char c);
 void consoleMarkInputStart();
 void createPrompt();
+void clearConsole();

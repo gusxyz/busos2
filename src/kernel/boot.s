@@ -35,7 +35,7 @@ stack_top:
 section .boot
 
 global _start
-_start: 
+_start:
 	mov eax, (initial_page_dir - 0xC0000000)
 	mov cr3, eax
 
@@ -55,11 +55,15 @@ higher_half:
 	push ebx
 	push eax
 	XOR ebp, ebp
+	extern _init
+	call _init
+	
 	extern kernel_main
 	call kernel_main
-halt:
-	halt
-	jmp halt
+hang:
+	cli
+	hlt
+	jmp hang
 
 section .data
 align 4096

@@ -12,15 +12,45 @@ void *memset(void *s, int c, size_t n)
     return s;
 };
 
-void *memcpy(void *destination, void *source, size_t num)
+void *memcpy(void *dest, void *src, size_t num)
 {
     int i;
-    char *d = destination;
-    char *s = source;
+    char *d = dest;
+    char *s = src;
     for (i = 0; i < num; i++)
         d[i] = s[i];
 
-    return destination;
+    return dest;
+}
+
+void *memmove(void *dest, const void *src, size_t n)
+{
+    unsigned char *d = (unsigned char *)dest;
+    const unsigned char *s = (const unsigned char *)src;
+
+    if (d == s || n == 0)
+    {
+        return dest;
+    }
+
+    if (s < d && s + n > d)
+    {
+        d += n;
+        s += n;
+        while (n--)
+        {
+            *--d = *--s;
+        }
+    }
+    else
+    {
+        while (n--)
+        {
+            *d++ = *s++;
+        }
+    }
+
+    return dest;
 }
 
 int strlen(char *s)

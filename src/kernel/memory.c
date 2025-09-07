@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#define CEIL_DIV(a, b) (((a + b) - 1) / b)
 
 static uint32_t pageFrameMin;
 static uint32_t pageFrameMax;
@@ -320,17 +321,14 @@ void vmmUnmapRegion(uint32_t virtualAddr, size_t numPages)
 
 void *vmmAlloc(uint32_t phys_addr, size_t num_pages, uint32_t flags)
 {
-    // 1. Find a free block of virtual addresses for our mapping
     uint32_t virt_addr = vmmFindFreePages(num_pages);
     if (virt_addr == 0)
     {
         printf("vmmAlloc: out of virtual memory!\n");
-        return NULL; // Return NULL on failure
+        return NULL;
     }
 
-    // 2. Map the physical region to the virtual space we just found
     vmmMapRegion(virt_addr, phys_addr, num_pages, flags);
 
-    // 3. Return the virtual pointer
     return (void *)virt_addr;
 }

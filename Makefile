@@ -6,11 +6,10 @@ CXX = /home/gus/opt/cross/bin/i686-elf-g++
 GDB = ~/opt/cross/bin/i686-elf-gdb os/boot/kernel.bin
 ASM = nasm
 QEMU = qemu-system-i386
-LD = /home/gus/opt/cross/bin/i686-elf-ld
-CFLAGS = -m32 -g -ffreestanding -fno-exceptions -Wall -Wextra -I $(INCLUDE_DIR)
+CFLAGS = -m32 -g -ffreestanding -fno-exceptions -nostdlib -Wall -Wextra -I $(INCLUDE_DIR)
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti -std=c++11
 ASMFLAGS = -f elf32
-LDFLAGS = -T linker.ld
+LDFLAGS = -T linker.ld -nostdlib
 
 # Directories
 SRC_DIR = src
@@ -21,25 +20,34 @@ KERNEL_OUT_DIR = os/boot
 ISO_DIR = $(BUILD_DIR)
 
 # --- AUTOMATIC SOURCE AND OBJECT FILE DISCOVERY ---
-# 1. Find all source files using 'shell find'. This is robust.
 C_SOURCES := $(shell find $(KERNEL_SRC_DIR) -name '*.c')
-C_SOURCES += $(shell find $(INCLUDE_DIR) -name '*.c') # Add liballoc.c
+C_SOURCES += $(shell find $(INCLUDE_DIR) -name '*.c')
 CXX_SOURCES := $(shell find $(SRC_DIR) -name '*.cpp')
-
-ASM_SOURCES := $(shell find $(KERNEL_SRC_DIR) -name '*.s')
+ALL_ASM_SOURCES := $(shell find $(KERNEL_SRC_DIR) -name '*.s')
 SFN_SOURCES := $(shell find $(KERNEL_SRC_DIR) -name '*.sfn')
 
-# 2. Generate the list of object files from the source files.
-#    'notdir' gets the filename (e.g., kernel.c), 'patsubst' changes .c to .o.
+# Separate CRT files from regular assembly files
+CRT_ASM_SOURCES := $(filter %crti.s %crtn.s, $(ALL_ASM_SOURCES))
+ASM_SOURCES := $(filter-out %crti.s %crtn.s, $(ALL_ASM_SOURCES))
+
+# Generate lists of object file basenames
 C_OBJS := $(patsubst %.c,%.o,$(notdir $(C_SOURCES)))
 CXX_OBJS := $(patsubst %.cpp,%.o,$(notdir $(CXX_SOURCES)))
 ASM_OBJS := $(patsubst %.s,%.o,$(notdir $(ASM_SOURCES)))
 SFN_OBJS := $(patsubst %.sfn,%.o,$(notdir $(SFN_SOURCES)))
 
-# 3. Create the final OBJECTS list by adding the build directory prefix.
-OBJECTS := $(addprefix $(INTERMEDIATE_DIR)/, $(C_OBJS) $(CXX_OBJS) $(ASM_OBJS) $(SFN_OBJS))
+# Create a list of all your kernel's object files
+KERNEL_OBJECTS := $(addprefix $(INTERMEDIATE_DIR)/, $(C_OBJS) $(CXX_OBJS) $(ASM_OBJS) $(SFN_OBJS))
 
-# 4. Tell 'make' where to find the source files for the generic rules below.
+# Define CRT object files provided by the compiler and built by you
+CRTI_OBJ := $(INTERMEDIATE_DIR)/crti.o
+CRTN_OBJ := $(INTERMEDIATE_DIR)/crtn.o
+CRTBEGIN_OBJ := $(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
+CRTEND_OBJ := $(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
+
+# The final, ordered list of all object files for the linker
+LINK_LIST := $(CRTI_OBJ) $(CRTBEGIN_OBJ) $(KERNEL_OBJECTS) $(CRTEND_OBJ) $(CRTN_OBJ)
+
 VPATH := $(shell find $(SRC_DIR) $(INCLUDE_DIR) -type d | tr '\n' ':')
 
 # Output files
@@ -51,49 +59,40 @@ DISK_IMAGE = $(ISO_DIR)/busos.img
 all: $(ISO_IMAGE)
 
 # --- GENERIC COMPILATION RULES ---
-# These rules replace ALL of your old, separate compilation rules.
-
-# Generic rule to compile ANY .c file found via VPATH
 $(INTERMEDIATE_DIR)/%.o: %.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
-# Generic rule to compile ANY .cpp file found via VPATH
+
 $(INTERMEDIATE_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Generic rule to assemble ANY .s file found via VPATH
 $(INTERMEDIATE_DIR)/%.o: %.s
 	@mkdir -p $(dir $@)
 	$(ASM) $(ASMFLAGS) $< -o $@
 
-# Generic rule for the .sfn font file
 $(INTERMEDIATE_DIR)/%.o: %.sfn
 	@mkdir -p $(dir $@)
-	$(LD) -m elf_i386 -r -b binary -o $@ $<
+	/home/gus/opt/cross/bin/i686-elf-ld -m elf_i386 -r -b binary -o $@ $<
 
 # Link kernel binary
-$(KERNEL_BIN): $(OBJECTS)
+$(KERNEL_BIN): $(LINK_LIST)
 	@mkdir -p $(dir $@)
-	$(CXX) $(LDFLAGS) -o $@ -ffreestanding -O2 -nostdlib $(OBJECTS) -lgcc 
+	$(CXX) -m32 -g $(LDFLAGS) -o $@ -ffreestanding -O2 $(LINK_LIST) -lgcc
 
-# ... (The rest of your Makefile: grub-mkrescue, clean, run, etc. stays the same) ...
-	
 $(ISO_IMAGE): $(KERNEL_BIN)
 	grub-mkrescue -o $@ -r ./os/
 
-# Clean build artifacts
 clean:
 	rm -rf $(BUILD_DIR) $(KERNEL_BIN)
 
-# Phony targets
 .PHONY: all clean
 
-run: os/boot/kernel.bin
-	$(QEMU) -cdrom build/bus.iso -serial stdio -monitor none
+run: $(ISO_IMAGE)
+	$(QEMU) -cdrom $(ISO_IMAGE) -serial stdio -monitor none
 
-debug: os/boot/kernel.bin
-	$(QEMU) -cdrom build/bus.iso -serial stdio -monitor none -s -S
+debug: $(ISO_IMAGE)
+	$(QEMU) -cdrom $(ISO_IMAGE) -serial stdio -monitor none -s -S
 
-gdb: os/boot/kernel.bin
+gdb:
 	$(GDB)

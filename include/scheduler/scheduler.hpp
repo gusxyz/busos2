@@ -1,5 +1,5 @@
-#pragma once
-
+#ifndef SCHEDULER_HPP
+#define SCHEDULER_HPP
 #include <scheduler/task.hpp> // Use the .hpp for the C++ Task class
 #include <stdint.h>
 
@@ -21,3 +21,4 @@ public:
     Task *getCurrentTask();
     void wakeSleepingTasks(uint64_t current_ticks);
 };
+#endif

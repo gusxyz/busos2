@@ -135,6 +135,7 @@ void consolePutC(char c)
         ssfn_dst.x = 0;
         ssfn_dst.y += ssfn_src->height;
         isCursorVisible(); // Check if we need to scroll after newline
+        serial_putc('\n');
     }
     else if (c == '\r')
     {

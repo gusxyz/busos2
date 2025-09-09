@@ -1,5 +1,17 @@
 #include <util.h>
-#include <stdio.h>
+
+const char possibleChars[] = "0123456789ABCDEF";
+#define PRINTF_STATE_START 0
+#define PRINTF_STATE_LENGTH 1
+#define PRINTF_STATE_SHORT 2
+#define PRINTF_STATE_LONG 3
+#define PRINTF_STATE_SPEC 4
+
+#define PRINTF_LENGTH_START 0
+#define PRINTF_LENGTH_SHORT_SHORT 1
+#define PRINTF_LENGTH_SHORT 2
+#define PRINTF_LENGTH_LONG 3
+#define PRINTF_LENGTH_LONG_LONG 4
 
 void *memset(void *s, int c, size_t n)
 {
@@ -305,6 +317,17 @@ int *serial_putsfn(int *argp, int length, bool sign, int radix)
     }
 
     return argp;
+}
+
+int strcmp(const char *s1, const char *s2)
+{
+    unsigned char c1, c2;
+    while ((c1 = *s1++) == (c2 = *s2++))
+    {
+        if (c1 == '\0')
+            return 0;
+    }
+    return c1 - c2;
 }
 
 int memcmp(const void *__s1, const void *__s2, size_t __n)

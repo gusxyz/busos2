@@ -3,7 +3,9 @@
 #define UTIL_H
 #include <stdint.h>
 #include <stddef.h>
+
 #define CEIL_DIV(a, b) (((a + b) - 1) / b)
+
 struct InterruptRegisters
 {
     uint32_t cr2;
@@ -87,6 +89,7 @@ extern "C"
                          : "memory");
         return ret;
     };
+    int strcmp(const char *s1, const char *s2);
 
 #ifdef __cplusplus
 }

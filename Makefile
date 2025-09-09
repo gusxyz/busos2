@@ -1,5 +1,5 @@
 # Sysroot DIR
-INCLUDE_DIR=sysroot/include
+INCLUDE_DIR=include/
 # Compiler and flags
 CC = /home/gus/opt/cross/bin/i686-elf-gcc
 CXX = /home/gus/opt/cross/bin/i686-elf-g++
@@ -53,7 +53,7 @@ VPATH := $(shell find $(SRC_DIR) $(INCLUDE_DIR) -type d | tr '\n' ':')
 # Output files
 KERNEL_BIN = $(KERNEL_OUT_DIR)/kernel.bin
 ISO_IMAGE = $(ISO_DIR)/bus.iso
-DISK_IMAGE = $(ISO_DIR)/busos.img
+DISK_IMAGE = ext2.img
 
 # Default target
 all: $(ISO_IMAGE)
@@ -89,10 +89,10 @@ clean:
 .PHONY: all clean
 
 run: $(ISO_IMAGE)
-	$(QEMU) -cdrom $(ISO_IMAGE) -serial stdio -monitor none
+	$(QEMU) -cdrom $(ISO_IMAGE) -hda $(DISK_IMAGE) -serial stdio -monitor none
 
 debug: $(ISO_IMAGE)
-	$(QEMU) -cdrom $(ISO_IMAGE) -serial stdio -monitor none -s -S
+	$(QEMU) -cdrom $(ISO_IMAGE) -hda $(DISK_IMAGE) -serial stdio -monitor none -s -S
 
 gdb:
 	$(GDB)

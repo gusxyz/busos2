@@ -28,11 +28,10 @@
  *
  */
 
-#pragma once        // gus edit
-#include <stdint.h> // gus edit
-
 #ifndef _SSFN_H_
 #define _SSFN_H_
+
+#include <stdint.h> // gus edit
 
 #define SSFN_VERSION 0x0200
 

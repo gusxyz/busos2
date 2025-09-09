@@ -25,7 +25,7 @@ typedef struct ide_device
    uint8_t Model[41];        // Model in string.
 } ide_device_t;
 
-void initIDEController();
+ide_device_t *initIDEController();
 void idePrintProg(pci_device_t *device);
 void ideInitialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, unsigned int BAR3, unsigned int BAR4);
 uint8_t ideRead(uint8_t channel, uint8_t reg);
@@ -35,11 +35,18 @@ void ideReadBuffer(uint8_t channel, uint8_t reg, unsigned int buffer, unsigned i
 uint8_t idePolling(uint8_t channel, unsigned int advanced_check);
 void ideWaitIrq();
 void ideIrq();
+uint8_t ideAtaReadWrite(uint8_t direction, uint8_t drive, unsigned int lba, uint8_t numsects, uint32_t selector, unsigned int edi);
 uint8_t ideAtapiRead(uint8_t drive, unsigned int lba, uint8_t numsects, unsigned short selector, unsigned int edi);
 void ideIrqHandle(struct InterruptRegisters *r);
 
-// inlines
-static inline void atapiReadSector(uint16_t selector, void *edi, uint16_t bus, int words)
+// fill out doxygen
+
+/// @brief Inline assembly to read from a sector of an ATA drive.
+/// @param selector segment selector to read from, or write to.
+/// @param edi offset in that segment
+/// @param bus which bus?
+/// @param words data to push to buffer dawdaw
+static inline void ataReadSector(uint16_t selector, void *edi, uint16_t bus, int words)
 {
    __asm__ volatile(
        "pushw %%es\n\t"

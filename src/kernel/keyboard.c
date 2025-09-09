@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <idt.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 bool capsOn;
 bool capsLock;

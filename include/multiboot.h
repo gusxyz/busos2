@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef MULTIBOOT_HEADER
 #define MULTIBOOT_HEADER 1
 

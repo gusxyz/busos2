@@ -1,4 +1,5 @@
-#pragma once
+#ifndef NEW_H
+#define NEW_H
 #include <stddef.h>
 #include <liballoc.h>
 
@@ -21,3 +22,4 @@ inline void operator delete[](void *p)
 {
     kfree(p);
 }
+#endif

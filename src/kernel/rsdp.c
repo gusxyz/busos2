@@ -2,6 +2,7 @@
 #include <util.h>
 #include <stdio.h>
 #include <memory.h>
+#include <stdio.h>
 
 XSDP_t *g_xsdp = NULL;
 RSDP_t *g_rsdp = NULL;
@@ -207,8 +208,8 @@ void rsdt_parse()
     for (int i = 0; i < num_pointers; i++)
     {
         uint32_t other_table_phys_addr = pointer_array[i];
-        printf("Found table at physical address: 0x%x\n", other_table_phys_addr);
-        // Now you would repeat this whole map/validate/parse process for this new table...
+        // printf("Found table at physical address: 0x%x\n", other_table_phys_addr);
+        //  Now you would repeat this whole map/validate/parse process for this new table...
     }
 
     // Remember to unmap the full region when you are done with it!

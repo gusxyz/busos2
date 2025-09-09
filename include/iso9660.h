@@ -1,4 +1,5 @@
-#pragma once
+#ifndef ISO9660_H
+#define ISO9660_H
 #include <stdint.h>
 
 typedef uint8_t iso711_t;
@@ -192,3 +193,4 @@ struct iso9660_pathtable_s
 } __attribute__((packed));
 
 typedef struct iso9660_pathtable_s iso9660_pathtable_t;
+#endif

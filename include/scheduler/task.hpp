@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TASK_HPP
+#define TASK_HPP
 #include <stdint.h>
 #include <scheduler/scheduler.h>
 #include <new.h>
@@ -46,3 +47,4 @@ public:
     void setState(TaskState new_state) { state = new_state; }
     void setWakeTime(uint64_t ticks) { wake_at_tick = ticks; }
 };
+#endif

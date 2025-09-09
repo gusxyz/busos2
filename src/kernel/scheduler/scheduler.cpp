@@ -1,5 +1,6 @@
 #include <scheduler/scheduler.hpp>
 #include <scheduler/scheduler.h>
+#include <stdio.h>
 #include <new.h>
 #include <liballoc.h>
 #include <timer.h>

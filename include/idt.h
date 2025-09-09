@@ -1,4 +1,5 @@
-#pragma once
+#ifndef IDT_H
+#define IDT_H
 #include <stdint.h>
 #include <util.h>
 
@@ -80,3 +81,4 @@ extern void irq12();
 extern void irq13();
 extern void irq14();
 extern void irq15();
+#endif

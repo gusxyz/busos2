@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <liballoc.h>
 #include <stdio.h>
 #include <gdt.h>
@@ -8,69 +9,23 @@
 #include <keyboard.h>
 #include <drivers/pci.h>
 #include <drivers/ide.h>
-#include <filesystem.h>
+#include <filesystems.h>
 #include <vbe.h>
 #include <console.h>
 #include <rsdp.h>
 #include <scheduler/scheduler.h>
-
-uint32_t g_ebda_addr = 0;
-
-void my_new_task_function()
-{
-    while (1)
-    {
-        printf("Hello from task\n");
-        sleep(500); // Your sleep function will work here
-    }
-}
-
-void some_other_function()
-{
-    bool flag = false;
-    while (1)
-    {
-        flag = !flag;
-        printf("This is the second task speaking!\n");
-
-        if (flag)
-        {
-            sleep(750);
-        }
-        else
-        {
-            sleep(250);
-        }
-    }
-}
+#include <ebda.h>
 
 void kernel_main(uint32_t magic, multiboot_info_t *bootInfo)
 {
+    // basics
     serialInit();
-    serial_putsf("Hello World!\n");
-    // print("Booting Bus Kernel...\n");
     initGDT();
     initIDT();
     initTimer();
 
-    if (bootInfo->flags & MULTIBOOT_INFO_MEM_MAP)
-    {
-        multiboot_mmap_entry_t *mmap = (multiboot_mmap_entry_t *)bootInfo->mmap_addr;
-
-        while ((uint32_t)mmap < bootInfo->mmap_addr + bootInfo->mmap_length)
-        {
-            if (mmap->type == MULTIBOOT_MEMORY_RESERVED && mmap->addr_high == 0 && mmap->addr_low < 0x100000)
-            {
-                // Store the result in our global variable for later use
-                g_ebda_addr = mmap->addr_low;
-            }
-            mmap = (multiboot_mmap_entry_t *)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
-        }
-    }
-    if (g_ebda_addr != 0)
-    {
-        serial_putsf("Found EBDA in memory map at 0x%x\n", g_ebda_addr);
-    }
+    // ebda
+    uint32_t g_ebda_addr = getEBDA(bootInfo);
 
     // memory
     uint32_t mod1 = *(uint32_t *)(bootInfo->mods_addr);
@@ -84,22 +39,19 @@ void kernel_main(uint32_t magic, multiboot_info_t *bootInfo)
 
     // devices
     acpiInit(g_ebda_addr);
-    pciInit(true);
+    pciInit(false);
     rsdt_parse();
     scheduler_init();
+    ide_device_t *ideDevices = initIDEController();
 
-    initIDEController();
     initKeyboard();
-    printf("Kernel Booted in %ims\n\0", ticks);
 
-    scheduler_create_task((uint32_t)&my_new_task_function, true);
-    scheduler_create_task((uint32_t)&some_other_function, true);
+    printf("Kernel Booted in %ims\n", ticks);
+    consoleMarkInputStart();
+
     asm volatile("sti");
-
-    // readAndParsePVD(0); // drive 0
-    // printfileSystemTree(0); // dear god its jason borne
-    // consoleMarkInputStart();
-    // This is now a proper power-saving idle loop
     for (;;)
         asm volatile("hlt"); // <<<<<<<<<<< CHANGE THE LOOP TO THIS
 }
+
+// holy fuck i need to figure out what posix requires that shit is going to melt my fucking brain for sure

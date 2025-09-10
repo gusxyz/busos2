@@ -6,7 +6,7 @@ uint32_t scanline;
 uint32_t vbe_width;
 uint32_t vbe_height;
 
-void vbeInit(multiboot_info_t *bootInfo)
+void vbe_init(multiboot_info_t *bootInfo)
 {
     multiboot_info_t *virtualBootInfo = (multiboot_info_t *)((uint32_t)bootInfo + KERNEL_START);
     if (!virtualBootInfo->flags & (1 << 12))

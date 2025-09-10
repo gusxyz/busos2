@@ -6,7 +6,7 @@ struct gdt_entry_struct gdt_entries[6];
 struct gdt_ptr_struct gdt_ptr;
 tss_entry_t tss_entry;
 
-void initGDT()
+void init_gdt()
 {
     gdt_ptr.limit = (sizeof(struct gdt_entry_struct) * 6) - 1;
     gdt_ptr.base = (uint32_t)&gdt_entries;

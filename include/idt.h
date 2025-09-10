@@ -18,7 +18,7 @@ struct idt_ptr_struct
     uint32_t base;
 } __attribute__((packed));
 
-void initIDT();
+void init_idt();
 void setIDTGate(uint8_t num, uint32_t base, uint16_t selector, uint8_t flags);
 extern void idt_flush(uint32_t);
 

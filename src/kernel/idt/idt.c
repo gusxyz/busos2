@@ -25,7 +25,7 @@ void remap_pic()
 
     disable_pic();
 }
-void initIDT()
+void init_idt()
 {
     remap_pic();
     idt_ptr.limit = sizeof(struct idt_entry_struct) * 256 - 1;

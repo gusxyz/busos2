@@ -53,7 +53,7 @@ RSDP_t *find_rsdp(uint32_t ptr)
     return NULL;
 }
 
-void acpiInit(uint32_t ptr)
+void acpi_init(uint32_t ptr)
 {
     RSDP_t *rsdp_base = find_rsdp(ptr);
 

@@ -1,7 +1,8 @@
 #ifndef EXT2_H
 #define EXT2_H
 
-// flags
+#include <stdint.h>
+
 #define EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER 0x0001
 #define EXT2_FEATURE_RO_COMPAT_LARGE_FILE 0x0002
 #define EXT2_FEATURE_RO_COMPAT_BTREE_DIR 0x0004
@@ -10,12 +11,16 @@
 #define EXT4_FEATURE_RO_COMPAT_DIR_NLINK 0x0020
 #define EXT4_FEATURE_RO_COMPAT_EXTRA_ISIZE 0x0040
 
+#define E_NO_FREE_INODES -1
+#define E_NO_FREE_BLOCKS -2
+#define E_IO_ERROR -3
+#define E_NO_MEM -4
+#define E_DIR_FULL -5
+
 #define REQ_COMPRESSION 0x0001
 #define REQ_DIR_TYPE_FIELD 0x0002
 #define REQ_JOURNAL_REPLAY 0x0004
 #define REQ_JOURNAL_DEVICE 0x0008
-
-#include <stdint.h>
 
 extern enum ext2_enums_superblock_s {
     SUPERBLOCK_SIZE = 1024,
@@ -49,12 +54,12 @@ typedef enum ext2_enums_dirtype_s
     FIFO,
     SOCKET,
     SYMLINK,
-} ext2_enum_dirtype_t;
+} ext2_dirtype_t;
 
 typedef struct ext2_superblock_s
 {
-    uint32_t totalINodes;
-    uint32_t totalBlocks;
+    uint32_t total_inodes;
+    uint32_t total_blocks;
     uint32_t reservedBlocksForSuperUser;
     uint32_t totalUnllocatedBlocks;
     uint32_t totalUnllocatedINodes;
@@ -82,11 +87,11 @@ typedef struct ext2_superblock_s
 
 typedef struct ext2_superblock_s_ext
 {
-    uint32_t totalINodes;
-    uint32_t totalBlocks;
+    uint32_t total_inodes;
+    uint32_t total_blocks;
     uint32_t reservedBlocksForSuperUser;
-    uint32_t totalUnllocatedBlocks;
-    uint32_t totalUnllocatedINodes;
+    uint32_t free_blocks_count;
+    uint32_t free_inodes_count;
     uint32_t superBlockNumber;
     uint32_t logBlockSize;
     uint32_t logFramgentSize;
@@ -124,7 +129,7 @@ typedef struct ext2_blockgroupdescriptor_s
     uint32_t blockUsageBitmapAddr;
     uint32_t iNodeUsageBitmapAddr;
     uint32_t iNodeTableStartAddr;
-    uint16_t numUnllocatedBlocks;
+    uint16_t free_blocks_count;
     uint16_t numUnllocatedINodes;
     uint16_t numDirs;
 } __attribute__((packed)) ext2_blockgroupdescriptor_t;

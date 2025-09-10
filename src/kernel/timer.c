@@ -6,7 +6,7 @@ uint64_t ticks = 0;
 static const uint32_t freq = 1000; // 1 ms
 bool schedulerEnabled;
 
-void initTimer()
+void init_timer()
 {
     irq_install_handler(0, onIrq0);
 

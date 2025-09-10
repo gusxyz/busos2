@@ -47,7 +47,7 @@ iso9660_dir_t *isoResolveEntry(uint8_t drive, uint32_t dirLBA, const char *name)
         if (!sectorBuffer)
             return NULL;
 
-        if (ideAtapiRead(drive, dirLBA, 1, 0x10, (unsigned int)sectorBuffer))
+        if (ide_atapi_read(drive, dirLBA, 1, 0x10, (unsigned int)sectorBuffer))
         {
             kfree(sectorBuffer);
             return NULL;
@@ -67,7 +67,7 @@ iso9660_dir_t *isoResolveEntry(uint8_t drive, uint32_t dirLBA, const char *name)
             dirContentBuf = (uint8_t *)kmalloc(numSectors * ISO_BLOCKSIZE);
             if (!dirContentBuf)
                 return NULL;
-            if (ideAtapiRead(drive, dirLBA, numSectors, 0x10, (unsigned int)dirContentBuf))
+            if (ide_atapi_read(drive, dirLBA, numSectors, 0x10, (unsigned int)dirContentBuf))
             {
                 kfree(dirContentBuf);
                 return NULL;
@@ -114,7 +114,7 @@ iso9660_pvd_t *isoGetPVDStruct(uint8_t driveIndex)
         return NULL;
     }
 
-    uint8_t error = ideAtapiRead(driveIndex, pvdLBA, 1, 0x10, (unsigned int)buffer);
+    uint8_t error = ide_atapi_read(driveIndex, pvdLBA, 1, 0x10, (unsigned int)buffer);
 
     if (error != 0)
     {
@@ -159,7 +159,7 @@ uint8_t *isoLoadPathTable(uint8_t drive, iso9660_pvd_t *pvd)
         return NULL;
     }
 
-    uint8_t error = ideAtapiRead(drive, pathTableLBA, numSectors, 0x10, (unsigned int)tableBuffer);
+    uint8_t error = ide_atapi_read(drive, pathTableLBA, numSectors, 0x10, (unsigned int)tableBuffer);
     if (error)
     {
         printf("Error: Failed to read path table from disc. Code: %d\n", error);
@@ -245,7 +245,7 @@ void isoPrintFilesInDirectory(uint8_t drive, uint32_t dirLBA, int depth)
     if (!sectorBuffer)
         return;
 
-    if (ideAtapiRead(drive, dirLBA, 1, 0x10, (unsigned int)sectorBuffer))
+    if (ide_atapi_read(drive, dirLBA, 1, 0x10, (unsigned int)sectorBuffer))
     {
         printf("Read error in printfilesInDirectory\n");
         kfree(sectorBuffer);
@@ -271,7 +271,7 @@ void isoPrintFilesInDirectory(uint8_t drive, uint32_t dirLBA, int depth)
         if (!dirContentBuf)
             return;
 
-        if (ideAtapiRead(drive, dirLBA, num_sectors, 0x10, (unsigned int)dirContentBuf))
+        if (ide_atapi_read(drive, dirLBA, num_sectors, 0x10, (unsigned int)dirContentBuf))
         {
             printf("Read error for multi-sector directory\n");
             kfree(dirContentBuf);

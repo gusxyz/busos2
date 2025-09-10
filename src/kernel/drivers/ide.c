@@ -12,7 +12,7 @@ uint8_t ideBuf[2048] = {0};
 volatile unsigned static char ideIrqInvoked = 0;
 unsigned static char atapiPacket[12] = {0xA8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-ide_device_t *initIDEController()
+void init_ide()
 {
     pci_device_t *ide_controller = pciFindDevice(0x8086, 0x01, 0x01);
     if (ide_controller == NULL)
@@ -25,18 +25,18 @@ ide_device_t *initIDEController()
 
     // currently were just gonna support compatibility mode
     // to make this more robust check prog if for pci then pass the BARs from the device
-    ideInitialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
-    irq_install_handler(14, &ideIrqHandle);
-    irq_install_handler(15, &ideIrqHandle);
-    return *ideDevices;
+    init_controller(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
+    irq_install_handler(14, &ide_irq_handle);
+    irq_install_handler(15, &ide_irq_handle);
+    return;
 }
 
-void ideIrqHandle(struct InterruptRegisters *r)
+void ide_irq_handle(struct InterruptRegisters *r)
 {
     ideIrqInvoked = 1;
 }
 
-void ideInitialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, unsigned int BAR3, unsigned int BAR4)
+void init_controller(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, unsigned int BAR3, unsigned int BAR4)
 {
     int j, k, count = 0;
 
@@ -366,7 +366,7 @@ void determineAddressing(unsigned int lba, uint16_t capabilities, uint8_t *lba_m
 }
 */
 
-uint8_t ideAtaReadWrite(uint8_t direction, uint8_t drive, unsigned int lba, uint8_t numsects, uint32_t selector, unsigned int edi)
+uint8_t ide_ata_rw(uint8_t direction, uint8_t drive, unsigned int lba, uint8_t numsects, uint32_t selector, unsigned int edi)
 {
     uint8_t lba_mode; /* 0: CHS, 1:LBA28, 2: LBA48 */
     uint8_t dma;      /* 0: No DMA, 1: DMA */
@@ -515,7 +515,7 @@ uint8_t ideAtaReadWrite(uint8_t direction, uint8_t drive, unsigned int lba, uint
     return 0;
 }
 
-uint8_t ideAtapiRead(uint8_t drive, unsigned int lba, uint8_t numsects, unsigned short selector, unsigned int edi)
+uint8_t ide_atapi_read(uint8_t drive, unsigned int lba, uint8_t numsects, unsigned short selector, unsigned int edi)
 {
     unsigned int channel = ideDevices[drive].Channel;
     unsigned int slavebit = ideDevices[drive].Drive;

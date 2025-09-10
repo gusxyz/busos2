@@ -7,11 +7,12 @@
 #include <liballoc.h>
 #include <stdio.h>
 #include <util.h>
+#include <vfs.h>
 
 // vfs
 
 // ext2
-void extReadDrive(uint8_t drive);
+void ext2_read_drive(uint8_t drive);
 
 // iso 9660
 iso9660_pvd_t *isoGetPVDStruct(uint8_t driveIndex);

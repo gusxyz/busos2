@@ -13,71 +13,8 @@ const char possibleChars[] = "0123456789ABCDEF";
 #define PRINTF_LENGTH_LONG 3
 #define PRINTF_LENGTH_LONG_LONG 4
 
-void *memset(void *s, int c, size_t n)
-{
-    unsigned char *p = (unsigned char *)s;
-    unsigned char value = (unsigned char)c;
-
-    for (size_t i = 0; i < n; i++)
-        p[i] = value;
-
-    return s;
-};
-
-void *memcpy(void *dest, void *src, size_t num)
-{
-    int i;
-    char *d = dest;
-    char *s = src;
-    for (i = 0; i < num; i++)
-        d[i] = s[i];
-
-    return dest;
-}
-
-void *memmove(void *dest, const void *src, size_t n)
-{
-    unsigned char *d = (unsigned char *)dest;
-    const unsigned char *s = (const unsigned char *)src;
-
-    if (d == s || n == 0)
-    {
-        return dest;
-    }
-
-    if (s < d && s + n > d)
-    {
-        d += n;
-        s += n;
-        while (n--)
-        {
-            *--d = *--s;
-        }
-    }
-    else
-    {
-        while (n--)
-        {
-            *d++ = *s++;
-        }
-    }
-
-    return dest;
-}
-
-int strlen(char *s)
-{
-    int len = 0;
-    while (*s != '\0')
-    {
-        len++;
-        s++;
-    }
-    return len;
-}
-
 // Initialize serial port (COM1)
-void serialInit()
+void serial_init()
 {
     outb(0x3F8 + 1, 0x00); // Disable interrupts
     outb(0x3F8 + 3, 0x80); // Enable DLAB
@@ -317,33 +254,4 @@ int *serial_putsfn(int *argp, int length, bool sign, int radix)
     }
 
     return argp;
-}
-
-int strcmp(const char *s1, const char *s2)
-{
-    unsigned char c1, c2;
-    while ((c1 = *s1++) == (c2 = *s2++))
-    {
-        if (c1 == '\0')
-            return 0;
-    }
-    return c1 - c2;
-}
-
-int memcmp(const void *__s1, const void *__s2, size_t __n)
-{
-    unsigned char *a = (unsigned char *)__s1, *b = (unsigned char *)__s2;
-    if (__n > 0)
-    {
-        while (__n-- > 0)
-        {
-            if (*a != *b)
-            {
-                return *a - *b;
-            }
-            a++;
-            b++;
-        }
-    }
-    return 0;
 }

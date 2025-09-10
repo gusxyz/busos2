@@ -27,7 +27,7 @@ typedef struct pci_device
     uint32_t bar5;
 } pci_device_t;
 
-void pciInit(bool dumpPCI);
+void pci_init(bool dumpPCI);
 uint32_t pciConfigReadDWord(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset);
 uint16_t pciConfigReadWord(uint8_t bus, uint8_t slot, uint8_t func, uint8_t offset);
 uint16_t pciGetVendorID(uint8_t bus, uint8_t device, uint8_t func);

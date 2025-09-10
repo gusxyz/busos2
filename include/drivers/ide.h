@@ -25,9 +25,9 @@ typedef struct ide_device
    uint8_t Model[41];        // Model in string.
 } ide_device_t;
 
-ide_device_t *initIDEController();
+void init_ide();
 void idePrintProg(pci_device_t *device);
-void ideInitialize(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, unsigned int BAR3, unsigned int BAR4);
+void init_controller(unsigned int BAR0, unsigned int BAR1, unsigned int BAR2, unsigned int BAR3, unsigned int BAR4);
 uint8_t ideRead(uint8_t channel, uint8_t reg);
 void ideWrite(uint8_t channel, uint8_t reg, uint8_t data);
 uint8_t idePrintError(unsigned int drive, uint8_t err);
@@ -35,9 +35,9 @@ void ideReadBuffer(uint8_t channel, uint8_t reg, unsigned int buffer, unsigned i
 uint8_t idePolling(uint8_t channel, unsigned int advanced_check);
 void ideWaitIrq();
 void ideIrq();
-uint8_t ideAtaReadWrite(uint8_t direction, uint8_t drive, unsigned int lba, uint8_t numsects, uint32_t selector, unsigned int edi);
-uint8_t ideAtapiRead(uint8_t drive, unsigned int lba, uint8_t numsects, unsigned short selector, unsigned int edi);
-void ideIrqHandle(struct InterruptRegisters *r);
+uint8_t ide_ata_rw(uint8_t direction, uint8_t drive, unsigned int lba, uint8_t numsects, uint32_t selector, unsigned int edi);
+uint8_t ide_atapi_read(uint8_t drive, unsigned int lba, uint8_t numsects, unsigned short selector, unsigned int edi);
+void ide_irq_handle(struct InterruptRegisters *r);
 
 // fill out doxygen
 

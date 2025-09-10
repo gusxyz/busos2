@@ -6,4 +6,4 @@
 extern uint32_t scanline;
 extern uint32_t vbe_width;
 extern uint32_t vbe_height;
-void vbeInit(multiboot_info_t *bootInfo);
+void vbe_init(multiboot_info_t *bootInfo);

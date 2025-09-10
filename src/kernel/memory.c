@@ -74,7 +74,7 @@ uint32_t vmmFindFreePages(size_t numPages)
     return 0; // Could not find a suitable block before kernel space
 }
 
-void initMemory(uint32_t memHigh, uint32_t physicalAllocStart)
+void init_memory(uint32_t memHigh, uint32_t physicalAllocStart)
 {
     initial_page_dir[0] = 0;
     invalid(0);

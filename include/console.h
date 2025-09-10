@@ -2,7 +2,7 @@
 #define CONSOLE_H
 #include <stdint.h>
 
-void consoleInit();
+void console_init();
 void consoleMarkInputStart();
 void createPrompt();
 void clearConsole();

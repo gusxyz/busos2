@@ -41,5 +41,5 @@ typedef struct ACPISDTHeader
 
 RSDP_t *scan_for_rsdp(uintptr_t start_addr, uintptr_t end_addr);
 RSDP_t *find_rsdp(uint32_t ptr);
-void acpiInit(uint32_t ptr);
+void acpi_init(uint32_t ptr);
 void rsdt_parse();

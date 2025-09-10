@@ -16,7 +16,7 @@ static uint32_t input_start_y = 0;
 #define MONOSPACE ssfn_src->width / 1.5
 extern spinlock_t console_lock = false;
 
-void consoleInit()
+void console_init()
 {
     serial_putsf("Initializing Console...\n");
     ssfn_src = &_binary_src_kernel_fonts_font_sfn_start;

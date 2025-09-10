@@ -61,7 +61,7 @@ extern "C"
         uint32_t iomap_base;
     } __attribute__((packed)) tss_entry_t;
 
-    void initGDT();
+    void init_gdt();
     void setGDTGate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
     void writeTSS(uint32_t num, uint16_t ss0, uint32_t esp0);
     extern void gdt_flush(uint32_t);

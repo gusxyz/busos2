@@ -1,6 +1,6 @@
 #ifndef VFS_H
 #define VFS_H
-
+/*
 struct filesystem_driver_s;
 struct mountpoint_s;
 struct vfs_node_s;
@@ -25,5 +25,6 @@ typedef struct mountpoint_s
     // Link to the next mountpoint in our global list
     mountpoint_t *next;
 } mountpoint_t;
+*/
 
 #endif

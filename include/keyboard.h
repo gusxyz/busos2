@@ -2,6 +2,6 @@
 #define KEYBOARD_H
 #include <util.h>
 
-void initKeyboard();
+void init_keyboard();
 void keyboardHandler(struct InterruptRegisters *reg);
 #endif

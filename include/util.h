@@ -3,7 +3,11 @@
 #define UTIL_H
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 
+#define is_bit_set(byte_array, bit) (byte_array[(bit) / 8] & (1 << ((bit) % 8)))
+#define set_bit(byte_array, bit) (byte_array[(bit) / 8] |= (1 << ((bit) % 8)))
 #define CEIL_DIV(a, b) (((a + b) - 1) / b)
 
 struct InterruptRegisters
@@ -19,12 +23,7 @@ struct InterruptRegisters
 extern "C"
 {
 #endif
-    void *memset(void *s, int c, size_t n);
-    void *memmove(void *dest, const void *src, size_t n);
-    void *memcpy(void *destination, void *source, size_t num);
-    int memcmp(const void *__s1, const void *__s2, size_t __n);
-    int strlen(char *s);
-    void serialInit();
+    void serial_init();
     int serialTransmitEmpty();
     void serial_putc(char c);
     void serial_puts(const char *str);
@@ -89,7 +88,6 @@ extern "C"
                          : "memory");
         return ret;
     };
-    int strcmp(const char *s1, const char *s2);
 
 #ifdef __cplusplus
 }

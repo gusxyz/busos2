@@ -6,7 +6,7 @@
 static pci_device_t pciDevices[MAX_PCI_DEVICES];
 static int pciDeviceCount = 0;
 
-void pciInit(bool dumpPCI)
+void pci_init(bool dumpPCI)
 {
     checkAllBuses();
     printf("PCI Initialized\n");

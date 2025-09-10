@@ -17,7 +17,7 @@ extern int mem_num_vpages;
 #define PAGE_FLAG_OWNER (1 << 9)
 
 void invalid(uint32_t virtualAddr);
-void initMemory(uint32_t memHigh, uint32_t physicalAllocStart);
+void init_memory(uint32_t memHigh, uint32_t physicalAllocStart);
 uint32_t pmmAllocPageFrame();
 uint32_t vmmFindFreePages(size_t numPages);
 void vmmUnmapPage(uint32_t virtualAddr);

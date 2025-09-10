@@ -19,10 +19,10 @@
 void kernel_main(uint32_t magic, multiboot_info_t *bootInfo)
 {
     // basics
-    serialInit();
-    initGDT();
-    initIDT();
-    initTimer();
+    serial_init();
+    init_gdt();
+    init_idt();
+    init_timer();
 
     // ebda
     uint32_t g_ebda_addr = getEBDA(bootInfo);
@@ -30,23 +30,24 @@ void kernel_main(uint32_t magic, multiboot_info_t *bootInfo)
     // memory
     uint32_t mod1 = *(uint32_t *)(bootInfo->mods_addr);
     uint32_t physicalAllocStart = (mod1 + 0xFFF) & ~0XFFF;
-    initMemory((uint32_t)bootInfo->mem_upper * 1024, physicalAllocStart);
+    init_memory((uint32_t)bootInfo->mem_upper * 1024, physicalAllocStart);
     multiboot_info_t *vbi = (multiboot_info_t *)((uint32_t)bootInfo + KERNEL_START);
 
     // video
-    vbeInit(bootInfo);
-    consoleInit();
+    vbe_init(bootInfo);
+    console_init();
 
     // devices
-    acpiInit(g_ebda_addr);
-    pciInit(false);
+    acpi_init(g_ebda_addr);
+    pci_init(false);
     rsdt_parse();
     scheduler_init();
-    ide_device_t *ideDevices = initIDEController();
+    ide_device_t *ideDevices = init_ide();
 
-    initKeyboard();
+    init_keyboard();
 
     printf("Kernel Booted in %ims\n", ticks);
+    ext2_read_drive(0);
     consoleMarkInputStart();
 
     asm volatile("sti");
